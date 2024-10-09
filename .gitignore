@@ -1,1 +1,2 @@
-./Assignements/ass_1_binary_tree/target/
+# Ignore all target folders in any subdirectory
+**/target/
