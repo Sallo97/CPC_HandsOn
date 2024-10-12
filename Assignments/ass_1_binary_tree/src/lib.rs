@@ -1,3 +1,5 @@
+use std::cmp::max;
+
 pub struct Node {
     key: u32,
     id_left: Option<usize>,
@@ -141,13 +143,62 @@ impl Tree {
         let (_, _, res) = self.is_bst_rec(0, min, max);
         res
     }
+
+    /// A private recursive function that determines for the given node
+    /// the pair of the best sum_path so far and the max_path so far s.t
+    /// sum_path = contains the best path, that is if we need to follow the left
+    ///             or right subtree of the current node
+    /// max_path = contains the value of summing of the path from
+    ///             left_leaf -> current node -> right_leaf
+    /// # Arguments
+    /// 'node_idx' - the idx in the tree containing the current node.
+    fn max_path_sum_rec(&self, node_idx: usize) -> (Option<u32>, Option<u32>) {
+        // Base Case = the current node is a leaf
+        if let (None, None) = (self.nodes[node_idx].id_left, self.nodes[node_idx].id_right) {
+            (None, None)
+        }
+        // Iterative Case = the current node has at least a child
+        else {
+            let (bl, ml) = match self.nodes[node_idx].id_left {
+                None => (None, None),
+                Some(id) => self.max_path_sum_rec(id),
+            };
+
+            let (br, mr) = match self.nodes[node_idx].id_right {
+                None => (None, None),
+                Some(id) => self.max_path_sum_rec(id),
+            };
+
+            let key = self.nodes[node_idx].key;
+            let current_subtree_sum = match (ml, mr) {
+                (None, _) => None,
+                (_, None) => None,
+                (Some(val_1), Some(val_2)) => Some(val_1 + val_2 + key),
+            };
+            let bu = max(max(bl, br), current_subtree_sum);
+
+            let mu: Option<u32> = match max(ml, mr) {
+                None => Some(key),
+                Some(val) => Some(val + key),
+            };
+
+            (bu, mu)
+        }
+    }
+
+    /// A dummy public function that returns the maximum path sum
+    pub fn max_path_sum(&self) -> (Option<u32>, Option<u32>) {
+        let root = 0;
+        self.max_path_sum_rec(root)
+    }
 }
 
 /// This is a battery of tests for the is_bst and is_bst_recursive function.
-/// Each test consists in constructing a tree step by step, testing if it is a bst each time we add a new node.
+/// Each test consists in constructing a tree step by step.
+/// Each time we add a new node, we test if the tree is a BST.
 /// The final constructed tree could be a BST or not a BST, all the intermediate trees are BST.
-/// In each test we show the final tree, indicating with !<key>! if that key makes the BST invalid
-/// and telling what the final result should be
+/// In each test there is a comment giving a visual representation the final tree.
+/// With !<key>! we indicate the node that makes the BST invalid.
 #[cfg(test)]
 mod bst_tests {
 
@@ -345,14 +396,16 @@ mod bst_tests {
         tree.add_node(right_child, 17, false);
         assert!(!tree.is_bst(), "The tree should NOT be a BST!");
     }
+
+    #[test]
+    fn bst_test_6() {
+        // TODO add a positive case here!
+    }
 }
 
 #[cfg(test)]
 mod sum_tests {
 
     #[test]
-    fn sum_test_1() {
-        println!("ahiahiahi il culito");
-        assert!(true);
-    }
+    fn sum_test_1() {}
 }
