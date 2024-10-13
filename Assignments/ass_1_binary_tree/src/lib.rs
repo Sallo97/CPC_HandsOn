@@ -211,7 +211,7 @@ mod bst_tests {
         assert!(tree.is_bst(), "The tree should be a BST!");
 
         tree.add_node(0, 7, false);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert!(tree.is_bst(), "The tree should be a BST!")
     }
 
     #[test]
@@ -253,7 +253,7 @@ mod bst_tests {
         assert!(tree.is_bst(), "The tree should be a BST!");
 
         tree.add_node(right_child, 4, true);
-        assert!(!tree.is_bst(), "The tree should NOT be a BST!");
+        assert!(!tree.is_bst(), "The tree should NOT be a BST!")
     }
 
     #[test]
@@ -318,7 +318,7 @@ mod bst_tests {
         assert!(tree.is_bst(), "The tree should be a BST!");
 
         tree.add_node(parent_r, 13, false);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert!(tree.is_bst(), "The tree should be a BST!")
     }
 
     #[test]
@@ -388,7 +388,7 @@ mod bst_tests {
         assert!(tree.is_bst(), "The tree should be a BST!");
 
         tree.add_node(right_child, 17, false);
-        assert!(!tree.is_bst(), "The tree should NOT be a BST!");
+        assert!(!tree.is_bst(), "The tree should NOT be a BST!")
     }
 
     #[test]
@@ -442,7 +442,7 @@ mod sum_tests {
         assert_eq!(tree.max_path_sum(), (Some(127), Some(115)));
 
         tree.add_node(parent, 4, false);
-        assert_eq!(tree.max_path_sum(), (Some(128), Some(115)));
+        assert_eq!(tree.max_path_sum(), (Some(128), Some(115)))
     }
 
     #[test]
@@ -466,6 +466,59 @@ mod sum_tests {
         assert_eq!(tree.max_path_sum(), (Some(106), Some(103)));
 
         tree.add_node(parent, 100, false);
-        assert_eq!(tree.max_path_sum(), (Some(202), Some(103)));
+        assert_eq!(tree.max_path_sum(), (Some(202), Some(103)))
+    }
+
+    #[test]
+    fn max_sum_3() {
+        // The method should return (128, 115):
+        //          1
+        //         /
+        //       !10!
+        //     /     \
+        //  !100!   !100!
+        let mut tree = Tree::with_root(1);
+        assert_eq!(tree.max_path_sum(), (None, Some(1)));
+
+        let parent = tree.add_node(0, 10, true);
+        assert_eq!(tree.max_path_sum(), (None, Some(11)));
+
+        tree.add_node(parent, 100, true);
+        assert_eq!(tree.max_path_sum(), (None, Some(111)));
+
+        tree.add_node(parent, 100, false);
+        assert_eq!(tree.max_path_sum(), (Some(210), Some(111)))
+    }
+
+    #[test]
+    fn max_sum_4() {
+        // The method should return (306, 205):
+        //           5
+        //         /   \
+        //      !1!   !200!
+        //    /     \
+        //  100   !100!
+        let mut tree = Tree::with_root(5);
+        assert_eq!(tree.max_path_sum(), (None, Some(5)));
+
+        let parent = tree.add_node(0, 1, true);
+        assert_eq!(tree.max_path_sum(), (None, Some(6)));
+
+        tree.add_node(0, 200, false);
+        assert_eq!(tree.max_path_sum(), (Some(206), Some(205)));
+
+        tree.add_node(parent, 100, true);
+        assert_eq!(tree.max_path_sum(), (Some(306), Some(205)));
+
+        tree.add_node(parent, 100, false);
+        assert_eq!(tree.max_path_sum(), (Some(306), Some(205)))
+    }
+
+    #[test]
+    fn max_sum_5() {
+        // The method should return (None, 1):
+        //   1
+        let tree = Tree::with_root(1);
+        assert_eq!(tree.max_path_sum(), (None, Some(1)))
     }
 }
