@@ -158,16 +158,17 @@ impl Tree {
             Some(id) => self.max_path_sum_rec(id),
         };
 
-        // Determines the maximum path from left_subtree -> current_node -> right_subtree
-        // and the maximum path between left_subtree -> current_node and right_subtree -> current_node
+        // Determines the maximum path sum and the best path starting
+        // from a leaf and terminating at the current node
         let key = self.nodes[node_idx].key;
-        let bu = match (ml, mr) {
-            (None, _) => max(bl, br),
-            (_, None) => max(bl, br),
-            (Some(val_1), Some(val_2)) => max(max(bl, br), Some(val_1 + val_2 + key)),
+
+        let bu = if let (Some(val_1), Some(val_2)) = (ml, mr) {
+            max(max(bl, br), Some(val_1 + val_2 + key))
+        } else {
+            max(bl, br)
         };
 
-        let mu: Option<u32> = match max(ml, mr) {
+        let mu = match max(ml, mr) {
             None => Some(key),
             Some(val) => Some(val + key),
         };
