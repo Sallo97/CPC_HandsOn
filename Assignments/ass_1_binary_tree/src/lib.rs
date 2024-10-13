@@ -86,17 +86,16 @@ impl Tree {
         0
     }
 
-    /// A private recursive function that computes for the tree starting at the node
-    /// with index `node_idx` the minimum value, maximum value in it and if the tree
-    /// is a BST or not.
+    /// A private recursive function that computes for the tree starting
+    ///  at the node if it is a BST or not.
     /// # Arguments
     /// * `node_idx` - the idx of the current node.
     /// * `min`  - the minimum found so far (at the start should be the key of the starting node).
     /// * `max`  - the maximum found so far (at the start should be the key of the starting node).
     /// # Return
     /// Returns the triple (min,max, bst) s.t.:
-    /// * `min`  - the current minimum for the explored tree.
-    /// * `max`  - the current maximum for the explored tree.
+    /// * `min`  - the current minimum after exploring the tree.
+    /// * `max`  - the current maximum after exploring the tree.
     /// * `bst` - a bool stating if the tree is a bst or not.
     fn is_bst_rec(&self, node_idx: usize, min: u32, max: u32) -> (u32, u32, bool) {
         // Updating main values
@@ -122,15 +121,11 @@ impl Tree {
             max = if r_max > max { r_max } else { max };
         }
 
-        // Base Case (we explored the node's subtrees || the node was a leaf)
         (min, max, true)
     }
 
-    /// A public function which determines if the tree calling the method is
-    /// a BST or not.
-    /// Recall that if a tree is a BST then:
-    ///     - max_key(root.left_subtree)  < root.key
-    ///     - min_key(root.right_subtree) > root.key
+    /// A public function which determines if the tree calling
+    /// the method is a BST or not.
     pub fn is_bst(&self) -> bool {
         let key = self.nodes[0].key;
         let (_, _, res) = self.is_bst_rec(0, key, key);
@@ -143,8 +138,8 @@ impl Tree {
     /// 'node_idx' - the index of the current node.
     /// # Returns
     /// * `bu`- max sum path between two leaves in the explored tree.
-    /// * `mu`- max sum path from a leaf to the node at `node_idx` (not the final solution,
-    ///         but helps upper nodes).
+    /// * `mu`- the best path from a leaf to the node at `node_idx`. It is NOT
+    ///         the final solution, but it is used by the caller to determine its `bu`.
     fn max_path_sum_rec(&self, node_idx: usize) -> (Option<u32>, Option<u32>) {
         // Iteratively checks the left subtree
         let (bl, ml) = match self.nodes[node_idx].id_left {
@@ -180,7 +175,7 @@ impl Tree {
     /// in the tree.
     /// #Returns
     /// The value of the max_path_sum as an Option<u32>. If the value is None, it means
-    /// that the max_path_sum does not exists (e.g. there is only one leaf in the tree).
+    /// that the max_path_sum does not exists (i.e. there is only one leaf in the tree).
     pub fn max_path_sum(&self) -> Option<u32> {
         let root = 0;
         let (res, _) = self.max_path_sum_rec(root);
@@ -261,7 +256,7 @@ mod bst_tests {
         //    /   \
         //   3     7
         //        /
-        //       !7!  <-- 7 shouldn't be = than 5!
+        //       !7!  <-- 7 shouldn't be = than 7!
         let mut tree = Tree::with_root(5);
         assert_eq!(
             tree.is_bst_rec(0, 5, 5),
@@ -558,8 +553,13 @@ mod sum_tests {
     fn max_sum_1() {
         // The final tree has max_path_sum = None:
         //   1
-        let tree = Tree::with_root(1);
+        //  /
+        // 3
+        let mut tree = Tree::with_root(1);
         assert_eq!(tree.max_path_sum_rec(0), (None, Some(1)));
+
+        tree.add_node(0, 3, true);
+        assert_eq!(tree.max_path_sum(), None)
     }
 
     #[test]
