@@ -92,7 +92,7 @@ impl Tree {
     /// # Arguments
     /// * `node_idx` - the idx of the current node.
     /// * `min`  - the minimum found so far (at the start should be the key of the starting node).
-    /// * `max`  - the maximum found so far (at the start should be the key of the starting node + 1).
+    /// * `max`  - the maximum found so far (at the start should be the key of the starting node).
     /// # Return
     /// Returns the triple (min,max, bst) s.t.:
     /// * `min`  - the current minimum for the explored tree.
@@ -106,8 +106,8 @@ impl Tree {
 
         // Visiting left subtree
         if let Some(id_left) = self.nodes[node_idx].id_left {
-            let (l_min, l_max, l_bst) = self.is_bst_rec(id_left, min, key);
-            if l_max > key || !l_bst {
+            let (l_min, l_max, l_bst) = self.is_bst_rec(id_left, min, key - 1);
+            if l_max >= key || !l_bst {
                 return (0, 0, false);
             }
             min = if l_min < min { l_min } else { min };
@@ -146,24 +146,26 @@ impl Tree {
     /// * `mu`- max sum path from a leaf to the node at `node_idx` (not the final solution,
     ///         but helps upper nodes).
     fn max_path_sum_rec(&self, node_idx: usize) -> (Option<u32>, Option<u32>) {
-        // Iterative Case = the current node has at least a child
+        // Iteratively checks the left subtree
         let (bl, ml) = match self.nodes[node_idx].id_left {
             None => (None, None),
             Some(id) => self.max_path_sum_rec(id),
         };
 
+        // Iteratively checks the right subtree
         let (br, mr) = match self.nodes[node_idx].id_right {
             None => (None, None),
             Some(id) => self.max_path_sum_rec(id),
         };
 
+        // Determines the maximum path from left_subtree -> current_node -> right_subtree
+        // and the maximum path between left_subtree -> current_node and right_subtree -> current_node
         let key = self.nodes[node_idx].key;
-        let current_subtree_sum = match (ml, mr) {
-            (None, _) => None,
-            (_, None) => None,
-            (Some(val_1), Some(val_2)) => Some(val_1 + val_2 + key),
+        let bu = match (ml, mr) {
+            (None, _) => max(bl, br),
+            (_, None) => max(bl, br),
+            (Some(val_1), Some(val_2)) => max(max(bl, br), Some(val_1 + val_2 + key)),
         };
-        let bu = max(max(bl, br), current_subtree_sum);
 
         let mu: Option<u32> = match max(ml, mr) {
             None => Some(key),
@@ -258,7 +260,7 @@ mod bst_tests {
         //    /   \
         //   3     7
         //        /
-        //       !4!  <-- 4 shouldn't be < than 5!
+        //       !7!  <-- 7 shouldn't be = than 5!
         let mut tree = Tree::with_root(5);
         assert_eq!(
             tree.is_bst_rec(0, 5, 5),
@@ -280,7 +282,7 @@ mod bst_tests {
             "The tree should be a BST!"
         );
 
-        tree.add_node(right_child, 4, true);
+        tree.add_node(right_child, 7, true);
         assert!(!tree.is_bst(), "The tree should NOT be a BST!")
     }
 
