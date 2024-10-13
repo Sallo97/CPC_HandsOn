@@ -199,7 +199,7 @@ mod bst_tests {
     use super::*;
 
     #[test]
-    fn bst_test_1() {
+    fn bst_1() {
         // [TEST-1] The final tree is a BST:
         //      5
         //    /   \
@@ -215,7 +215,7 @@ mod bst_tests {
     }
 
     #[test]
-    fn bst_test_2() {
+    fn bst_2() {
         // [TEST-2] The final tree is NOT a BST. The error is in the left subtree:
         //       5
         //    /    \
@@ -236,7 +236,7 @@ mod bst_tests {
     }
 
     #[test]
-    fn bst_test_3() {
+    fn bst_3() {
         // [TEST-3] The final tree is NOT a BST. The error is in the right subtree:
         //      5
         //    /   \
@@ -257,7 +257,7 @@ mod bst_tests {
     }
 
     #[test]
-    fn bst_test_4() {
+    fn bst_4() {
         // [TEST-4] The final tree is a BST:
         //                       25
         //                /             \
@@ -322,7 +322,7 @@ mod bst_tests {
     }
 
     #[test]
-    fn bst_test_5() {
+    fn bst_5() {
         // [TEST-5] The final tree isn't a BST:
         //                       25
         //                /             \
@@ -392,7 +392,7 @@ mod bst_tests {
     }
 
     #[test]
-    fn bst_test_6() {
+    fn bst_6() {
         // TODO add a positive case here!
     }
 }
@@ -406,7 +406,7 @@ mod sum_tests {
     use crate::Tree;
 
     #[test]
-    fn sum_test_1() {
+    fn max_sum_1() {
         // The method should return (128, 115):
         //            !5!
         //           /   \
@@ -416,22 +416,37 @@ mod sum_tests {
         //     /  \
         //    3   !4!
         let mut tree = Tree::with_root(5);
+        assert_eq!(tree.max_path_sum(), (None, Some(5)));
+
         let left_ch = tree.add_node(0, 2, true);
+        assert_eq!(tree.max_path_sum(), (None, Some(7)));
+
         let right_ch = tree.add_node(0, 100, false);
+        assert_eq!(tree.max_path_sum(), (Some(107), Some(105)));
+
         let parent = right_ch;
         tree.add_node(parent, 3, true);
+        assert_eq!(tree.max_path_sum(), (Some(110), Some(108)));
+
         tree.add_node(parent, 10, false);
+        assert_eq!(tree.max_path_sum(), (Some(117), Some(115)));
+
         let parent = left_ch;
         tree.add_node(parent, 1, false);
-        let parent = tree.add_node(parent, 7, true);
-        tree.add_node(parent, 3, true);
-        tree.add_node(parent, 4, false);
+        assert_eq!(tree.max_path_sum(), (Some(118), Some(115)));
 
-        assert_eq!(tree.max_path_sum(), (Some(128), Some(115)), "Blablabla");
+        let parent = tree.add_node(parent, 7, true);
+        assert_eq!(tree.max_path_sum(), (Some(124), Some(115)));
+
+        tree.add_node(parent, 3, true);
+        assert_eq!(tree.max_path_sum(), (Some(127), Some(115)));
+
+        tree.add_node(parent, 4, false);
+        assert_eq!(tree.max_path_sum(), (Some(128), Some(115)));
     }
 
     #[test]
-    fn sum_test_2() {
+    fn max_sum_2() {
         // The method should return (128, 115):
         //            1
         //          /   \
