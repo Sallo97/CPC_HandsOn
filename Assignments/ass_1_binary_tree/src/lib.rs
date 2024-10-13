@@ -86,12 +86,18 @@ impl Tree {
         0
     }
 
-    /// A private recursive function that determines if the sub-tree
-    /// starting at the node with index `node_idx` is a BST.
+    /// A private recursive function that computes for the tree starting at the node
+    /// with index `node_idx` the minimum value, maximum value in it and if the tree
+    /// is a BST or not.
     /// # Arguments
-    /// * `node_idx` - the idx in the tree containing the current node.
-    /// * `min`  - the current minimum for which `node.key` > `min`
-    /// * `max`  - the current maximum for which `node.key` < `max`
+    /// * `node_idx` - the idx of the current node.
+    /// * `min`  - the minimum found so far (at the start should be the key of the starting node).
+    /// * `max`  - the maximum found so far (at the start should be the key of the starting node + 1).
+    /// # Return
+    /// Returns the triple (min,max, bst) s.t.:
+    /// * `min`  - the current minimum for the explored tree.
+    /// * `max`  - the current maximum for the explored tree.
+    /// * `bst` - a bool stating if the tree is a bst or not.
     fn is_bst_rec(&self, node_idx: usize, min: &mut u32, max: &mut u32) -> (u32, u32, bool) {
         // Updating main values
         let key = self.nodes[node_idx].key;
@@ -102,11 +108,11 @@ impl Tree {
             *max = key;
         }
 
-        // Visiting left sub-tree
+        // Visiting left subtree
         if let Some(id_left) = self.nodes[node_idx].id_left {
             *max = key;
-            let (l_min, l_max, l_bool) = self.is_bst_rec(id_left, min, max);
-            if l_max > key || !l_bool {
+            let (l_min, l_max, l_bst) = self.is_bst_rec(id_left, min, max);
+            if l_max > key || !l_bst {
                 return (0, 0, false);
             }
             if l_min < *min {
@@ -114,11 +120,11 @@ impl Tree {
             }
         }
 
-        // Visiting right sub-tree
+        // Visiting right subtree
         if let Some(id_right) = self.nodes[node_idx].id_right {
             *min = key;
-            let (r_min, r_max, r_bool) = self.is_bst_rec(id_right, min, max);
-            if r_min < key || !r_bool {
+            let (r_min, r_max, r_bst) = self.is_bst_rec(id_right, min, max);
+            if r_min < key || !r_bst {
                 return (0, 0, false);
             }
             if r_max > *max {
@@ -126,32 +132,31 @@ impl Tree {
             }
         }
 
-        // Base Case (node is a Leaf or we visited its subtree(s))
+        // Base Case (we explored the node's subtrees || the node was a leaf)
         (*min, *max, true)
     }
 
-    /// A dummy public function returns a boolean s.t.:
-    /// true -> the tree is a BST
-    /// false -> otherwise
-    /// # Arguments
-    /// # Hints
-    /// Recall that idx_of_root = 0
+    /// A public function which determines if the tree calling the method is
+    /// a BST or not.
+    /// Recall that if a tree is a BST then:
+    ///     - max_key(root.left_subtree)  < root.key
+    ///     - min_key(root.right_subtree) > root.key
     pub fn is_bst(&self) -> bool {
-        let mut key = self.nodes[0].key;
-        let max: &mut u32 = &mut (key + 1);
-        let min: &mut u32 = &mut key;
-        let (_, _, res) = self.is_bst_rec(0, min, max);
+        let key = self.nodes[0].key;
+        let mut max = key + 1;
+        let mut min = key;
+        let (_, _, res) = self.is_bst_rec(0, &mut min, &mut max);
         res
     }
 
-    /// A private recursive function that determines for the given node
-    /// the pair of the best sum_path so far and the max_path so far s.t
-    /// sum_path = contains the best path, that is if we need to follow the left
-    ///             or right subtree of the current node
-    /// max_path = contains the value of summing of the path from
-    ///             left_leaf -> current node -> right_leaf
+    /// A private recursive function that calculates for the node at `node_idx`
+    /// the maximum path sum from a leaf to another leaf.
     /// # Arguments
-    /// 'node_idx' - the idx in the tree containing the current node.
+    /// 'node_idx' - the index of the current node.
+    /// # Returns
+    /// * `bu`- max sum path between two leaves in the explored tree.
+    /// * `mu`- max sum path from a leaf to the node at `node_idx` (not the final solution,
+    ///         but helps upper nodes).
     fn max_path_sum_rec(&self, node_idx: usize) -> (Option<u32>, Option<u32>) {
         // Iterative Case = the current node has at least a child
         let (bl, ml) = match self.nodes[node_idx].id_left {
@@ -180,23 +185,26 @@ impl Tree {
         (bu, mu)
     }
 
-    /// A dummy public function that returns the maximum path sum
-    pub fn max_path_sum(&self) -> (Option<u32>, Option<u32>) {
+    /// A public function which determines the max_path_sum from a leaf to another leaf
+    /// in the tree.
+    /// #Returns
+    /// The value of the max_path_sum as an Option<u32>. If the value is None, it means
+    /// that the max_path_sum does not exists (e.g. there is only one leaf in the tree).
+    pub fn max_path_sum(&self) -> Option<u32> {
         let root = 0;
-        self.max_path_sum_rec(root)
+        let (res, _) = self.max_path_sum_rec(root);
+        res
     }
 }
 
-/// This is a battery of tests for the is_bst and is_bst_recursive function.
-/// Each test consists in constructing a tree step by step.
-/// Each time we add a new node, we test if the tree is a BST.
-/// The final constructed tree could be a BST or not a BST, all the intermediate trees are BST.
-/// In each test there is a comment giving a visual representation the final tree.
-/// With !<key>! we indicate the node that makes the BST invalid.
+/// A set of tests for `is_bst` and `is_bst_recursive`.
+/// Each test incrementally builds a tree, checking if it's a BST after each node addition.
+/// The final tree may or may not be a valid BST, but all intermediate trees are valid BSTs.
+/// Each test includes a visual representation of the final tree, with `!<key>!` marking the
+/// node that invalidates the BST (if any).
 #[cfg(test)]
 mod bst_tests {
-
-    use super::*;
+    use crate::Tree;
 
     #[test]
     fn bst_1() {
@@ -204,11 +212,19 @@ mod bst_tests {
         //      5
         //    /   \
         //   3     7
-        let mut tree = Tree::with_root(5);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        let mut tree = crate::Tree::with_root(5);
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 5, &mut 5),
+            (5, 5, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(0, 3, true);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 5, &mut 5),
+            (3, 5, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(0, 7, false);
         assert!(tree.is_bst(), "The tree should be a BST!")
@@ -223,13 +239,25 @@ mod bst_tests {
         //    \
         //     !6!    <- 6 shouldn't be > than 5!
         let mut tree = Tree::with_root(5);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 5, &mut 5),
+            (5, 5, true),
+            "The tree should be a BST!"
+        );
 
         let left_child = tree.add_node(0, 3, true);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 5, &mut 5),
+            (3, 5, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(0, 7, false);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 5, &mut 5),
+            (5, 7, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(left_child, 6, false);
         assert!(!tree.is_bst(), "The tree should NOT be a BST!");
@@ -244,13 +272,25 @@ mod bst_tests {
         //        /
         //       !4!  <-- 4 shouldn't be < than 5!
         let mut tree = Tree::with_root(5);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 5, &mut 5),
+            (5, 5, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(0, 3, true);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 5, &mut 5),
+            (3, 5, true),
+            "The tree should be a BST!"
+        );
 
         let right_child = tree.add_node(0, 7, false);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 5, &mut 5),
+            (5, 7, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(right_child, 4, true);
         assert!(!tree.is_bst(), "The tree should NOT be a BST!")
@@ -269,53 +309,112 @@ mod bst_tests {
         //    /   \     /   \
         //   3    6    11   13
         let mut tree = Tree::with_root(25);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (25, 25, true),
+            "The tree should be a BST!"
+        );
 
         let root = 0;
         let left_child = tree.add_node(root, 15, true);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (15, 25, true),
+            "The tree should be a BST!"
+        );
 
         let right_child = tree.add_node(root, 30, false);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (25, 30, true),
+            "The tree should be a BST!"
+        );
 
         let parent_l = left_child; // 15
         let parent_r = right_child; // 30
 
         let left_child = tree.add_node(parent_l, 10, true);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (25, 30, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(parent_l, 20, false);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (25, 30, true),
+            "The tree should be a BST!"
+        );
 
         let right_child = tree.add_node(parent_r, 27, true);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (25, 30, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(parent_r, 35, false);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
 
         let parent_l = left_child; // 10
         let parent_r = right_child; // 27
 
         let left_child = tree.add_node(parent_l, 5, true);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
 
         let right_child = tree.add_node(parent_l, 12, false);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(parent_r, 26, true);
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
+
         tree.add_node(parent_r, 28, false);
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
 
         let parent_l = left_child; // 5
         let parent_r = right_child; // 12
 
         tree.add_node(parent_l, 3, true);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(parent_l, 6, false);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(parent_r, 11, true);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(parent_r, 13, false);
         assert!(tree.is_bst(), "The tree should be a BST!")
@@ -336,78 +435,214 @@ mod bst_tests {
         //                    \
         //                    !17!  <-- 17 shouldn't be > 15!
         let mut tree = Tree::with_root(25);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (25, 25, true),
+            "The tree should be a BST!"
+        );
 
         let root = 0;
         let left_child = tree.add_node(root, 15, true);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (15, 25, true),
+            "The tree should be a BST!"
+        );
 
         let right_child = tree.add_node(root, 30, false);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (25, 30, true),
+            "The tree should be a BST!"
+        );
 
         let parent_l = left_child; // 15
         let parent_r = right_child; // 30
 
         let left_child = tree.add_node(parent_l, 10, true);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (25, 30, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(parent_l, 20, false);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (25, 30, true),
+            "The tree should be a BST!"
+        );
 
         let right_child = tree.add_node(parent_r, 27, true);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (25, 30, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(parent_r, 35, false);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
 
         let parent_l = left_child; // 10
         let parent_r = right_child; // 27
 
         let left_child = tree.add_node(parent_l, 5, true);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
 
         let right_child = tree.add_node(parent_l, 12, false);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(parent_r, 26, true);
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
+
         tree.add_node(parent_r, 28, false);
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
 
         let parent_l = left_child; // 5
         let parent_r = right_child; // 12
 
         tree.add_node(parent_l, 3, true);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(parent_l, 6, false);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(parent_r, 11, true);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
 
         let right_child = tree.add_node(parent_r, 13, false);
-        assert!(tree.is_bst(), "The tree should be a BST!");
+        assert_eq!(
+            tree.is_bst_rec(0, &mut 25, &mut 25),
+            (30, 35, true),
+            "The tree should be a BST!"
+        );
 
         tree.add_node(right_child, 17, false);
         assert!(!tree.is_bst(), "The tree should NOT be a BST!")
     }
-
-    #[test]
-    fn bst_6() {
-        // TODO add a positive case here!
-    }
 }
 
-/// This is a battery of tests for the max_path_sum and max_path_sum_rec methods.
-/// Each test consists in returning the final pair (bu, mu) relative to the whole tree.
-/// For each test we give a visual representation of the tree.
-/// nodes marked as !<key>! specify that they are in the optimal path
+/// A battery of tests for `max_path_sum` and `max_path_sum_rec`.
+/// Each test builds a tree step by step, checking `max_path_sum_rec` after each node addition.
+/// After the last node, `max_path_sum` is tested on the final tree.
+/// A visual representation of the final tree is provided, the nodes marked as `!<key>!`
+/// indicates the optimal path.
 #[cfg(test)]
 mod sum_tests {
     use crate::Tree;
 
     #[test]
     fn max_sum_1() {
-        // The method should return (128, 115):
+        // The final tree has max_path_sum = None:
+        //   1
+        let tree = Tree::with_root(1);
+        assert_eq!(tree.max_path_sum_rec(0), (None, Some(1)));
+    }
+
+    #[test]
+    fn max_sum_2() {
+        // The final tree has max_path_sum = Some(210):
+        //          1
+        //         /
+        //       !10!
+        //     /     \
+        //  !100!   !100!
+        let mut tree = Tree::with_root(1);
+        assert_eq!(tree.max_path_sum_rec(0), (None, Some(1)));
+
+        let parent = tree.add_node(0, 10, true);
+        assert_eq!(tree.max_path_sum_rec(0), (None, Some(11)));
+
+        tree.add_node(parent, 100, true);
+        assert_eq!(tree.max_path_sum_rec(0), (None, Some(111)));
+
+        tree.add_node(parent, 100, false);
+        assert_eq!(tree.max_path_sum(), Some(210))
+    }
+
+    #[test]
+    fn max_sum_3() {
+        // The final tree has max_path_sum = Some(202):
+        //            1
+        //          /   \
+        //        !2!    3
+        //     /       \
+        //  !100!     !100!
+        let mut tree = Tree::with_root(1);
+        assert_eq!(tree.max_path_sum_rec(0), (None, Some(1)));
+
+        let parent = tree.add_node(0, 2, true);
+        assert_eq!(tree.max_path_sum_rec(0), (None, Some(3)));
+
+        tree.add_node(0, 3, false);
+        assert_eq!(tree.max_path_sum_rec(0), (Some(6), Some(4)));
+
+        tree.add_node(parent, 100, true);
+        assert_eq!(tree.max_path_sum_rec(0), (Some(106), Some(103)));
+
+        tree.add_node(parent, 100, false);
+        assert_eq!(tree.max_path_sum(), Some(202))
+    }
+
+    #[test]
+    fn max_sum_4() {
+        // The final tree has max_path_sum = Some(306):
+        //           5
+        //         /   \
+        //      !1!   !200!
+        //    /     \
+        //  100   !100!
+        let mut tree = Tree::with_root(5);
+        assert_eq!(tree.max_path_sum_rec(0), (None, Some(5)));
+
+        let parent = tree.add_node(0, 1, true);
+        assert_eq!(tree.max_path_sum_rec(0), (None, Some(6)));
+
+        tree.add_node(0, 200, false);
+        assert_eq!(tree.max_path_sum_rec(0), (Some(206), Some(205)));
+
+        tree.add_node(parent, 100, true);
+        assert_eq!(tree.max_path_sum_rec(0), (Some(306), Some(205)));
+
+        tree.add_node(parent, 100, false);
+        assert_eq!(tree.max_path_sum(), Some(306))
+    }
+
+    #[test]
+    fn max_sum_5() {
+        // The final tree has max_path_sum = Some(128):
         //            !5!
         //           /   \
         //         !2!     !100!
@@ -416,109 +651,32 @@ mod sum_tests {
         //     /  \
         //    3   !4!
         let mut tree = Tree::with_root(5);
-        assert_eq!(tree.max_path_sum(), (None, Some(5)));
+        assert_eq!(tree.max_path_sum_rec(0), (None, Some(5)));
 
         let left_ch = tree.add_node(0, 2, true);
-        assert_eq!(tree.max_path_sum(), (None, Some(7)));
+        assert_eq!(tree.max_path_sum_rec(0), (None, Some(7)));
 
         let right_ch = tree.add_node(0, 100, false);
-        assert_eq!(tree.max_path_sum(), (Some(107), Some(105)));
+        assert_eq!(tree.max_path_sum_rec(0), (Some(107), Some(105)));
 
         let parent = right_ch;
         tree.add_node(parent, 3, true);
-        assert_eq!(tree.max_path_sum(), (Some(110), Some(108)));
+        assert_eq!(tree.max_path_sum_rec(0), (Some(110), Some(108)));
 
         tree.add_node(parent, 10, false);
-        assert_eq!(tree.max_path_sum(), (Some(117), Some(115)));
+        assert_eq!(tree.max_path_sum_rec(0), (Some(117), Some(115)));
 
         let parent = left_ch;
         tree.add_node(parent, 1, false);
-        assert_eq!(tree.max_path_sum(), (Some(118), Some(115)));
+        assert_eq!(tree.max_path_sum_rec(0), (Some(118), Some(115)));
 
         let parent = tree.add_node(parent, 7, true);
-        assert_eq!(tree.max_path_sum(), (Some(124), Some(115)));
+        assert_eq!(tree.max_path_sum_rec(0), (Some(124), Some(115)));
 
         tree.add_node(parent, 3, true);
-        assert_eq!(tree.max_path_sum(), (Some(127), Some(115)));
+        assert_eq!(tree.max_path_sum_rec(0), (Some(127), Some(115)));
 
         tree.add_node(parent, 4, false);
-        assert_eq!(tree.max_path_sum(), (Some(128), Some(115)))
-    }
-
-    #[test]
-    fn max_sum_2() {
-        // The method should return (128, 115):
-        //            1
-        //          /   \
-        //        !2!    3
-        //     /       \
-        //  !100!     !100!
-        let mut tree = Tree::with_root(1);
-        assert_eq!(tree.max_path_sum(), (None, Some(1)));
-
-        let parent = tree.add_node(0, 2, true);
-        assert_eq!(tree.max_path_sum(), (None, Some(3)));
-
-        tree.add_node(0, 3, false);
-        assert_eq!(tree.max_path_sum(), (Some(6), Some(4)));
-
-        tree.add_node(parent, 100, true);
-        assert_eq!(tree.max_path_sum(), (Some(106), Some(103)));
-
-        tree.add_node(parent, 100, false);
-        assert_eq!(tree.max_path_sum(), (Some(202), Some(103)))
-    }
-
-    #[test]
-    fn max_sum_3() {
-        // The method should return (128, 115):
-        //          1
-        //         /
-        //       !10!
-        //     /     \
-        //  !100!   !100!
-        let mut tree = Tree::with_root(1);
-        assert_eq!(tree.max_path_sum(), (None, Some(1)));
-
-        let parent = tree.add_node(0, 10, true);
-        assert_eq!(tree.max_path_sum(), (None, Some(11)));
-
-        tree.add_node(parent, 100, true);
-        assert_eq!(tree.max_path_sum(), (None, Some(111)));
-
-        tree.add_node(parent, 100, false);
-        assert_eq!(tree.max_path_sum(), (Some(210), Some(111)))
-    }
-
-    #[test]
-    fn max_sum_4() {
-        // The method should return (306, 205):
-        //           5
-        //         /   \
-        //      !1!   !200!
-        //    /     \
-        //  100   !100!
-        let mut tree = Tree::with_root(5);
-        assert_eq!(tree.max_path_sum(), (None, Some(5)));
-
-        let parent = tree.add_node(0, 1, true);
-        assert_eq!(tree.max_path_sum(), (None, Some(6)));
-
-        tree.add_node(0, 200, false);
-        assert_eq!(tree.max_path_sum(), (Some(206), Some(205)));
-
-        tree.add_node(parent, 100, true);
-        assert_eq!(tree.max_path_sum(), (Some(306), Some(205)));
-
-        tree.add_node(parent, 100, false);
-        assert_eq!(tree.max_path_sum(), (Some(306), Some(205)))
-    }
-
-    #[test]
-    fn max_sum_5() {
-        // The method should return (None, 1):
-        //   1
-        let tree = Tree::with_root(1);
-        assert_eq!(tree.max_path_sum(), (None, Some(1)))
+        assert_eq!(tree.max_path_sum(), Some(128))
     }
 }
