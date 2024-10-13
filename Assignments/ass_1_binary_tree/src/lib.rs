@@ -98,42 +98,32 @@ impl Tree {
     /// * `min`  - the current minimum for the explored tree.
     /// * `max`  - the current maximum for the explored tree.
     /// * `bst` - a bool stating if the tree is a bst or not.
-    fn is_bst_rec(&self, node_idx: usize, min: &mut u32, max: &mut u32) -> (u32, u32, bool) {
+    fn is_bst_rec(&self, node_idx: usize, min: u32, max: u32) -> (u32, u32, bool) {
         // Updating main values
         let key = self.nodes[node_idx].key;
-        if key < *min {
-            *min = key;
-        }
-        if key > *max {
-            *max = key;
-        }
+        let mut min = if key < min { key } else { min };
+        let mut max = if key > max { key } else { max };
 
         // Visiting left subtree
         if let Some(id_left) = self.nodes[node_idx].id_left {
-            *max = key;
-            let (l_min, l_max, l_bst) = self.is_bst_rec(id_left, min, max);
+            let (l_min, l_max, l_bst) = self.is_bst_rec(id_left, min, key);
             if l_max > key || !l_bst {
                 return (0, 0, false);
             }
-            if l_min < *min {
-                *min = l_min;
-            }
+            min = if l_min < min { l_min } else { min };
         }
 
         // Visiting right subtree
         if let Some(id_right) = self.nodes[node_idx].id_right {
-            *min = key;
-            let (r_min, r_max, r_bst) = self.is_bst_rec(id_right, min, max);
+            let (r_min, r_max, r_bst) = self.is_bst_rec(id_right, key, max);
             if r_min < key || !r_bst {
                 return (0, 0, false);
             }
-            if r_max > *max {
-                *max = r_max;
-            }
+            max = if r_max > max { r_max } else { max };
         }
 
         // Base Case (we explored the node's subtrees || the node was a leaf)
-        (*min, *max, true)
+        (min, max, true)
     }
 
     /// A public function which determines if the tree calling the method is
@@ -143,9 +133,7 @@ impl Tree {
     ///     - min_key(root.right_subtree) > root.key
     pub fn is_bst(&self) -> bool {
         let key = self.nodes[0].key;
-        let mut max = key + 1;
-        let mut min = key;
-        let (_, _, res) = self.is_bst_rec(0, &mut min, &mut max);
+        let (_, _, res) = self.is_bst_rec(0, key, key);
         res
     }
 
@@ -211,17 +199,17 @@ mod bst_tests {
         // [TEST-1] The final tree is a BST:
         //      5
         //    /   \
-        //   3     7
+        //   3     4
         let mut tree = crate::Tree::with_root(5);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 5, &mut 5),
+            tree.is_bst_rec(0, 5, 5),
             (5, 5, true),
             "The tree should be a BST!"
         );
 
         tree.add_node(0, 3, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 5, &mut 5),
+            tree.is_bst_rec(0, 5, 5),
             (3, 5, true),
             "The tree should be a BST!"
         );
@@ -240,22 +228,22 @@ mod bst_tests {
         //     !6!    <- 6 shouldn't be > than 5!
         let mut tree = Tree::with_root(5);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 5, &mut 5),
+            tree.is_bst_rec(0, 5, 5),
             (5, 5, true),
             "The tree should be a BST!"
         );
 
         let left_child = tree.add_node(0, 3, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 5, &mut 5),
+            tree.is_bst_rec(0, 5, 5),
             (3, 5, true),
             "The tree should be a BST!"
         );
 
         tree.add_node(0, 7, false);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 5, &mut 5),
-            (5, 7, true),
+            tree.is_bst_rec(0, 5, 5),
+            (3, 7, true),
             "The tree should be a BST!"
         );
 
@@ -273,22 +261,22 @@ mod bst_tests {
         //       !4!  <-- 4 shouldn't be < than 5!
         let mut tree = Tree::with_root(5);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 5, &mut 5),
+            tree.is_bst_rec(0, 5, 5),
             (5, 5, true),
             "The tree should be a BST!"
         );
 
         tree.add_node(0, 3, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 5, &mut 5),
+            tree.is_bst_rec(0, 5, 5),
             (3, 5, true),
             "The tree should be a BST!"
         );
 
         let right_child = tree.add_node(0, 7, false);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 5, &mut 5),
-            (5, 7, true),
+            tree.is_bst_rec(0, 5, 5),
+            (3, 7, true),
             "The tree should be a BST!"
         );
 
@@ -310,7 +298,7 @@ mod bst_tests {
         //   3    6    11   13
         let mut tree = Tree::with_root(25);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
+            tree.is_bst_rec(0, 25, 25),
             (25, 25, true),
             "The tree should be a BST!"
         );
@@ -318,15 +306,15 @@ mod bst_tests {
         let root = 0;
         let left_child = tree.add_node(root, 15, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
+            tree.is_bst_rec(0, 25, 25),
             (15, 25, true),
             "The tree should be a BST!"
         );
 
         let right_child = tree.add_node(root, 30, false);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (25, 30, true),
+            tree.is_bst_rec(0, 25, 25),
+            (15, 30, true),
             "The tree should be a BST!"
         );
 
@@ -335,29 +323,29 @@ mod bst_tests {
 
         let left_child = tree.add_node(parent_l, 10, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (25, 30, true),
+            tree.is_bst_rec(0, 25, 25),
+            (10, 30, true),
             "The tree should be a BST!"
         );
 
         tree.add_node(parent_l, 20, false);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (25, 30, true),
+            tree.is_bst_rec(0, 25, 25),
+            (10, 30, true),
             "The tree should be a BST!"
         );
 
         let right_child = tree.add_node(parent_r, 27, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (25, 30, true),
+            tree.is_bst_rec(0, 25, 25),
+            (10, 30, true),
             "The tree should be a BST!"
         );
 
         tree.add_node(parent_r, 35, false);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (10, 35, true),
             "The tree should be a BST!"
         );
 
@@ -366,29 +354,29 @@ mod bst_tests {
 
         let left_child = tree.add_node(parent_l, 5, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (5, 35, true),
             "The tree should be a BST!"
         );
 
         let right_child = tree.add_node(parent_l, 12, false);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (5, 35, true),
             "The tree should be a BST!"
         );
 
         tree.add_node(parent_r, 26, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (5, 35, true),
             "The tree should be a BST!"
         );
 
         tree.add_node(parent_r, 28, false);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (5, 35, true),
             "The tree should be a BST!"
         );
 
@@ -397,22 +385,22 @@ mod bst_tests {
 
         tree.add_node(parent_l, 3, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (3, 35, true),
             "The tree should be a BST!"
         );
 
         tree.add_node(parent_l, 6, false);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (3, 35, true),
             "The tree should be a BST!"
         );
 
         tree.add_node(parent_r, 11, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (3, 35, true),
             "The tree should be a BST!"
         );
 
@@ -436,7 +424,7 @@ mod bst_tests {
         //                    !17!  <-- 17 shouldn't be > 15!
         let mut tree = Tree::with_root(25);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
+            tree.is_bst_rec(0, 25, 25),
             (25, 25, true),
             "The tree should be a BST!"
         );
@@ -444,15 +432,15 @@ mod bst_tests {
         let root = 0;
         let left_child = tree.add_node(root, 15, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
+            tree.is_bst_rec(0, 25, 25),
             (15, 25, true),
             "The tree should be a BST!"
         );
 
         let right_child = tree.add_node(root, 30, false);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (25, 30, true),
+            tree.is_bst_rec(0, 25, 25),
+            (15, 30, true),
             "The tree should be a BST!"
         );
 
@@ -461,29 +449,29 @@ mod bst_tests {
 
         let left_child = tree.add_node(parent_l, 10, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (25, 30, true),
+            tree.is_bst_rec(0, 25, 25),
+            (10, 30, true),
             "The tree should be a BST!"
         );
 
         tree.add_node(parent_l, 20, false);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (25, 30, true),
+            tree.is_bst_rec(0, 25, 25),
+            (10, 30, true),
             "The tree should be a BST!"
         );
 
         let right_child = tree.add_node(parent_r, 27, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (25, 30, true),
+            tree.is_bst_rec(0, 25, 25),
+            (10, 30, true),
             "The tree should be a BST!"
         );
 
         tree.add_node(parent_r, 35, false);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (10, 35, true),
             "The tree should be a BST!"
         );
 
@@ -492,29 +480,29 @@ mod bst_tests {
 
         let left_child = tree.add_node(parent_l, 5, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (5, 35, true),
             "The tree should be a BST!"
         );
 
         let right_child = tree.add_node(parent_l, 12, false);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (5, 35, true),
             "The tree should be a BST!"
         );
 
         tree.add_node(parent_r, 26, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (5, 35, true),
             "The tree should be a BST!"
         );
 
         tree.add_node(parent_r, 28, false);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (5, 35, true),
             "The tree should be a BST!"
         );
 
@@ -523,29 +511,29 @@ mod bst_tests {
 
         tree.add_node(parent_l, 3, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (3, 35, true),
             "The tree should be a BST!"
         );
 
         tree.add_node(parent_l, 6, false);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (3, 35, true),
             "The tree should be a BST!"
         );
 
         tree.add_node(parent_r, 11, true);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (3, 35, true),
             "The tree should be a BST!"
         );
 
         let right_child = tree.add_node(parent_r, 13, false);
         assert_eq!(
-            tree.is_bst_rec(0, &mut 25, &mut 25),
-            (30, 35, true),
+            tree.is_bst_rec(0, 25, 25),
+            (3, 35, true),
             "The tree should be a BST!"
         );
 
