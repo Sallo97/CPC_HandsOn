@@ -153,37 +153,31 @@ impl Tree {
     /// # Arguments
     /// 'node_idx' - the idx in the tree containing the current node.
     fn max_path_sum_rec(&self, node_idx: usize) -> (Option<u32>, Option<u32>) {
-        // Base Case = the current node is a leaf
-        if let (None, None) = (self.nodes[node_idx].id_left, self.nodes[node_idx].id_right) {
-            (None, None)
-        }
         // Iterative Case = the current node has at least a child
-        else {
-            let (bl, ml) = match self.nodes[node_idx].id_left {
-                None => (None, None),
-                Some(id) => self.max_path_sum_rec(id),
-            };
+        let (bl, ml) = match self.nodes[node_idx].id_left {
+            None => (None, None),
+            Some(id) => self.max_path_sum_rec(id),
+        };
 
-            let (br, mr) = match self.nodes[node_idx].id_right {
-                None => (None, None),
-                Some(id) => self.max_path_sum_rec(id),
-            };
+        let (br, mr) = match self.nodes[node_idx].id_right {
+            None => (None, None),
+            Some(id) => self.max_path_sum_rec(id),
+        };
 
-            let key = self.nodes[node_idx].key;
-            let current_subtree_sum = match (ml, mr) {
-                (None, _) => None,
-                (_, None) => None,
-                (Some(val_1), Some(val_2)) => Some(val_1 + val_2 + key),
-            };
-            let bu = max(max(bl, br), current_subtree_sum);
+        let key = self.nodes[node_idx].key;
+        let current_subtree_sum = match (ml, mr) {
+            (None, _) => None,
+            (_, None) => None,
+            (Some(val_1), Some(val_2)) => Some(val_1 + val_2 + key),
+        };
+        let bu = max(max(bl, br), current_subtree_sum);
 
-            let mu: Option<u32> = match max(ml, mr) {
-                None => Some(key),
-                Some(val) => Some(val + key),
-            };
+        let mu: Option<u32> = match max(ml, mr) {
+            None => Some(key),
+            Some(val) => Some(val + key),
+        };
 
-            (bu, mu)
-        }
+        (bu, mu)
     }
 
     /// A dummy public function that returns the maximum path sum
@@ -403,9 +397,60 @@ mod bst_tests {
     }
 }
 
+/// This is a battery of tests for the max_path_sum and max_path_sum_rec methods.
+/// Each test consists in returning the final pair (bu, mu) relative to the whole tree.
+/// For each test we give a visual representation of the tree.
+/// nodes marked as !<key>! specify that they are in the optimal path
 #[cfg(test)]
 mod sum_tests {
+    use crate::Tree;
 
     #[test]
-    fn sum_test_1() {}
+    fn sum_test_1() {
+        // The method should return (128, 115):
+        //            !5!
+        //           /   \
+        //         !2!     !100!
+        //        /   \    /   \
+        //      !7!     1  3    !10!
+        //     /  \
+        //    3   !4!
+        let mut tree = Tree::with_root(5);
+        let left_ch = tree.add_node(0, 2, true);
+        let right_ch = tree.add_node(0, 100, false);
+        let parent = right_ch;
+        tree.add_node(parent, 3, true);
+        tree.add_node(parent, 10, false);
+        let parent = left_ch;
+        tree.add_node(parent, 1, false);
+        let parent = tree.add_node(parent, 7, true);
+        tree.add_node(parent, 3, true);
+        tree.add_node(parent, 4, false);
+
+        assert_eq!(tree.max_path_sum(), (Some(128), Some(115)), "Blablabla");
+    }
+
+    #[test]
+    fn sum_test_2() {
+        // The method should return (128, 115):
+        //            1
+        //          /   \
+        //        !2!    3
+        //     /       \
+        //  !100!     !100!
+        let mut tree = Tree::with_root(1);
+        assert_eq!(tree.max_path_sum(), (None, Some(1)));
+
+        let parent = tree.add_node(0, 2, true);
+        assert_eq!(tree.max_path_sum(), (None, Some(3)));
+
+        tree.add_node(0, 3, false);
+        assert_eq!(tree.max_path_sum(), (Some(6), Some(4)));
+
+        tree.add_node(parent, 100, true);
+        assert_eq!(tree.max_path_sum(), (Some(106), Some(103)));
+
+        tree.add_node(parent, 100, false);
+        assert_eq!(tree.max_path_sum(), (Some(202), Some(103)));
+    }
 }
