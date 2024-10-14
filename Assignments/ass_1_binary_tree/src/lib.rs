@@ -40,13 +40,13 @@ impl Tree {
             "Parent node id does not exist"
         );
         if is_left {
-            assert!(
-                self.nodes[parent_id].id_left == None,
+            assert_eq!(
+                self.nodes[parent_id].id_left, None,
                 "Parent node has the left child already set"
             );
         } else {
-            assert!(
-                self.nodes[parent_id].id_right == None,
+            assert_eq!(
+                self.nodes[parent_id].id_right, None,
                 "Parent node has the right child already set"
             );
         }
