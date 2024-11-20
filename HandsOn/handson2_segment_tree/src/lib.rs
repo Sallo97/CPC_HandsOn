@@ -104,6 +104,21 @@ mod max_segment_tree_tests {
 
     #[test]
     fn mst_1() {
+        // [TEST- 1] The constructed tree should be:
+        //         2
+        //       /   \
+        // A =  1     2
+        // p =  0     1
+        let a = vec![1, 2];
+        let mut tree = SegTree::empty_tree();
+        tree.max_build(&a);
+        if let Some(idx) = tree.root_idx {
+            assert_eq!(tree.nodes[idx].key, 2)
+        }
+    }
+
+    #[test]
+    fn mst_2() {
         // [TEST- 2] The constructed tree should be:
         //           3
         //         /   \
@@ -123,20 +138,106 @@ mod max_segment_tree_tests {
         }
     }
 
-    // #[test]
-    // fn mst_2() {
-    //     // [TEST- 1] The constructed tree should be:
-    //     //              6
-    //     //           /    \
-    //     //          5      \
-    //     //         /   \    \
-    //     //        5     2     6
-    //     //       / \   / \   / \
-    //     // A =  5  3  1  2  6   4
-    //     // p =  0  1  2  3  4   5
+    #[test]
+    fn mst_3() {
+        // [TEST- 3] The constructed tree should be:
+        //            4
+        //          /   \
+        //         4     3
+        //       /  \   /  \
+        // A =  4   2   3   1
+        // p =  0   1   2   3
+        let a = vec![4, 2, 3, 1];
+        let mut tree = SegTree::empty_tree();
+        tree.max_build(&a);
+        if let Some(idx) = tree.root_idx {
+            assert_eq!(tree.nodes[idx].key, 4);
+            if let (Some(l_idx), Some(r_idx)) = tree.nodes[idx].children {
+                assert_eq!(tree.nodes[l_idx].key, 4);
+                assert_eq!(tree.nodes[r_idx].key, 3);
+                if let (Some(l_idx), Some(r_idx)) = tree.nodes[l_idx].children {
+                    assert_eq!(tree.nodes[l_idx].key, 4);
+                    assert_eq!(tree.nodes[r_idx].key, 2);
+                }
+                if let (Some(l_idx), Some(r_idx)) = tree.nodes[r_idx].children {
+                    assert_eq!(tree.nodes[l_idx].key, 3);
+                    assert_eq!(tree.nodes[r_idx].key, 1);
+                }
+            }
+        }
+    }
 
-    //     let a = vec![5, 3, 1, 2, 6, 4];
-    //     let mut tree = SegTree::empty_tree();
-    //     tree.max_build(&a);
-    // }
+    #[test]
+    fn mst_4() {
+        // [TEST- 4] The constructed tree should be:
+        //               5
+        //            /     \
+        //           4       \
+        //          / \        5
+        //         4   \      / \
+        //       /  \   \    /   \
+        // A =  4   2    3  1     5
+        // p =  0   1   2   3     4
+        let a = vec![4, 2, 3, 1, 5];
+        let mut tree = SegTree::empty_tree();
+        tree.max_build(&a);
+        if let Some(idx) = tree.root_idx {
+            assert_eq!(tree.nodes[idx].key, 5);
+            if let (Some(l_idx), Some(r_idx)) = tree.nodes[idx].children {
+                assert_eq!(tree.nodes[l_idx].key, 4);
+                assert_eq!(tree.nodes[r_idx].key, 5);
+                if let (Some(l_idx), Some(r_idx)) = tree.nodes[l_idx].children {
+                    assert_eq!(tree.nodes[l_idx].key, 4);
+                    assert_eq!(tree.nodes[r_idx].key, 3);
+                    if let (Some(l_idx), Some(r_idx)) = tree.nodes[l_idx].children {
+                        assert_eq!(tree.nodes[l_idx].key, 4);
+                        assert_eq!(tree.nodes[r_idx].key, 2);
+                    }
+                }
+                if let (Some(l_idx), Some(r_idx)) = tree.nodes[r_idx].children {
+                    assert_eq!(tree.nodes[l_idx].key, 1);
+                    assert_eq!(tree.nodes[r_idx].key, 5);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn mst_5() {
+        // [TEST- 5] The constructed tree should be:
+        //                  6
+        //            /          \
+        //           6            5
+        //          / \          /  \
+        //         4   \         5   \
+        //       /  \   \      /  \   \
+        // A =  4   2    6    1    5   3
+        // p =  0   1   2     3    4   5
+        let a = vec![4, 2, 6, 1, 5, 3];
+        let mut tree = SegTree::empty_tree();
+        tree.max_build(&a);
+        if let Some(idx) = tree.root_idx {
+            assert_eq!(tree.nodes[idx].key, 6);
+            if let (Some(l_idx), Some(r_idx)) = tree.nodes[idx].children {
+                assert_eq!(tree.nodes[l_idx].key, 6);
+                assert_eq!(tree.nodes[r_idx].key, 5);
+                if let (Some(l_idx), Some(r_idx)) = tree.nodes[l_idx].children {
+                    assert_eq!(tree.nodes[l_idx].key, 4);
+                    assert_eq!(tree.nodes[r_idx].key, 6);
+                    if let (Some(l_idx), Some(r_idx)) = tree.nodes[l_idx].children {
+                        assert_eq!(tree.nodes[l_idx].key, 4);
+                        assert_eq!(tree.nodes[r_idx].key, 2);
+                    }
+                }
+                if let (Some(l_idx), Some(r_idx)) = tree.nodes[r_idx].children {
+                    assert_eq!(tree.nodes[l_idx].key, 5);
+                    assert_eq!(tree.nodes[r_idx].key, 3);
+                    if let (Some(l_idx), Some(r_idx)) = tree.nodes[l_idx].children {
+                        assert_eq!(tree.nodes[l_idx].key, 1);
+                        assert_eq!(tree.nodes[r_idx].key, 5)
+                    }
+                }
+            }
+        }
+    }
 }
