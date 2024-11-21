@@ -9,7 +9,30 @@
 /// - Max(i, j) that returns the largest value in A[i...j]
 ///
 /// [SECOND-PROBLEM] [STATUS = on the high sea]
-use std::{cmp, io::stderr};
+use std::cmp;
+
+/// Helper fn which recursively construct a Max Segment Tree.
+/// For each node `n[i,j]`, `n[i,j].key` = maximum value among
+/// the elements in the range `[i, j]`.
+/// # Returns
+/// The index of the created node in the Max Segment Tree.
+/// The first call will return the index of the root.
+
+fn h_build(nodes: &mut Vec<MaxNode>, a: &Vec<usize>, l: usize, r: usize) -> usize {
+    if l == r {
+        // BASE CASE: LEAF
+        nodes.push(MaxNode::new(a[l], (None, None), (l, l)));
+    } else {
+        // INDUCTIVE CASE: Internal Node
+        let m = (l + r) / 2;
+        let lchd = h_build(nodes, &a, l, m);
+        let rchd = h_build(nodes, &a, m + 1, r);
+        let val = cmp::max(nodes[lchd].key, nodes[rchd].key);
+
+        nodes.push(MaxNode::new(val, (Some(lchd), Some(rchd)), (l, r)));
+    }
+    nodes.len() - 1
+}
 
 /// Represents a Node in a Segment Tree.
 /// The main difference compared to a Node in a Binary Tree is that
@@ -42,52 +65,13 @@ impl MaxSTree {
     /// Initializes an empty tree instance.
     /// Note that this tree cannot be used as it is.
     /// Users must call `build` to construct the Max Segment Tree.
-    pub fn empty_tree() -> Self {
+    pub fn new(a: &Vec<usize>) -> Self {
+        let mut temp: Vec<MaxNode> = Vec::new();
+        let root = h_build(&mut temp, a, 0, a.len() - 1);
+
         Self {
-            nodes: Vec::new(),
-            root: None,
-        }
-    }
-
-    /// Appends a node to the tree.
-    /// # Returns
-    /// The index of the node in the tree.
-    fn add_node(
-        &mut self,
-        val: usize,
-        children: (Option<usize>, Option<usize>),
-        range: (usize, usize),
-    ) -> usize {
-        self.nodes.push(MaxNode::new(val, children, range));
-        self.nodes.len() - 1
-    }
-
-    /// Helper fn which recursively construct a Max Segment Tree.
-    /// For each node `n[i,j]`, `n[i,j].key` = maximum value among
-    /// the elements in the range `[i, j]`.
-    /// # Returns
-    /// The index of the created node in the Max Segment Tree.
-    /// The first call will return the index of the root.
-
-    fn h_build(&mut self, a: &Vec<usize>, l: usize, r: usize) -> usize {
-        if l == r {
-            // BASE CASE: LEAF
-            self.add_node(a[l], (None, None), (l, l))
-        } else {
-            // INDUCTIVE CASE: Internal Node
-            let m = (l + r) / 2;
-            let lchd = self.h_build(&a, l, m);
-            let rchd = self.h_build(&a, m + 1, r);
-            let val = cmp::max(self.nodes[lchd].key, self.nodes[rchd].key);
-            self.add_node(val, (Some(lchd), Some(rchd)), (l, r))
-        }
-    }
-
-    /// Constructs a Max Segment Tree based on the elements of the given array `a`.
-    pub fn build(&mut self, a: &Vec<usize>) {
-        match self.root {
-            None => self.root = Some(self.h_build(a, 0, a.len() - 1)),
-            Some(_) => eprintln!("Cannot construct a Max Segment Tree over an not-empty tree"),
+            nodes: temp,
+            root: Some(root),
         }
     }
 
@@ -206,6 +190,20 @@ pub struct FreqNode {
     range: (usize, usize),
 }
 
+impl FreqNode {
+    /// Base constructor
+    /// TODO add better description
+    pub fn new(n: usize, i: usize) -> Self {
+        let mut key = vec![0; n];
+        key[i] = 1;
+        Self {
+            key,
+            children: (None, None),
+            range: (i, i),
+        }
+    }
+}
+
 pub struct FreqSTree {
     nodes: Vec<FreqNode>,
     root: Option<usize>,
@@ -229,6 +227,27 @@ impl FreqSTree {
             a[i] += a[i - 1];
         }
         a.clone() //TODO Find a better version
+    }
+
+    /// Constructs a Frequency Segment Tree from a given set of segments `s_set = {s1, ..., sn}`,
+    /// where each segment `si` is defined as `(l, r)` with `0 <= l <= r <= n - 1`.
+    /// Each node `n[i, j]` contains a table where each entry `e(key)` represents:
+    /// `e(key) =` The number of positions within the range `[i, j]` that have exactly `key` overlapping segments.
+    fn h_build(&mut self, a: &Vec<usize>, l: usize, r: usize) -> usize {
+        // Base Case - Leaf
+        if l == r {
+            // Add Node here
+            0
+        }
+        // Inductive Case - Internal Node
+        else {
+            let m = (l + r) / 2;
+            let lchd = self.h_build(&a, l, m);
+            let rchd = self.h_build(&a, m + 1, r);
+            // Call Merge Funciton
+            // Add Node here
+            0
+        }
     }
 }
 
@@ -286,8 +305,7 @@ mod update_query_tests {
         // A =  1     2        1     1
         // p =  0     1        0     1
         let a = vec![1, 2];
-        let mut tree = MaxSTree::empty_tree();
-        tree.build(&a);
+        let mut tree = MaxSTree::new(&a);
         tree.update((0, 1), 1);
         if let Some(idx) = tree.root {
             assert_eq!(tree.nodes[idx].key, 1);
@@ -305,8 +323,7 @@ mod update_query_tests {
         // A =  1  3      2      1  3       1
         // p =  0  1      2      0  1       2
         let a = vec![1, 3, 2];
-        let mut tree = MaxSTree::empty_tree();
-        tree.build(&a);
+        let mut tree = MaxSTree::new(&a);
         tree.update((2, 2), 1);
         if let Some(idx) = tree.root {
             assert_eq!(tree.nodes[idx].key, 3);
@@ -329,8 +346,7 @@ mod update_query_tests {
         // A =  4   2   3   1      4   2  2   1
         // p =  0   1   2   3      0   1  2   3
         let a = vec![4, 2, 3, 1];
-        let mut tree = MaxSTree::empty_tree();
-        tree.build(&a);
+        let mut tree = MaxSTree::new(&a);
         tree.update((1, 2), 2);
         tree.update((1, 2), 3);
         if let Some(idx) = tree.root {
@@ -363,8 +379,7 @@ mod update_query_tests {
         // A =  4   2    3  1     5     1    1    1   1   5
         // p =  0   1   2   3     4
         let a = vec![4, 2, 3, 1, 5];
-        let mut tree = MaxSTree::empty_tree();
-        tree.build(&a);
+        let mut tree = MaxSTree::new(&a);
         tree.update((0, 3), 1);
         if let Some(idx) = tree.root {
             assert_eq!(tree.nodes[idx].key, 5);
@@ -400,8 +415,7 @@ mod update_query_tests {
         // A =  4   2    6    1    5   3
         // p =  0   1   2     3    4   5
         let a = vec![4, 2, 6, 1, 5, 3];
-        let mut tree = MaxSTree::empty_tree();
-        tree.build(&a);
+        let mut tree = MaxSTree::new(&a);
         tree.update((7, 9), 10);
         if let Some(idx) = tree.root {
             assert_eq!(tree.nodes[idx].key, 6);
@@ -452,8 +466,7 @@ mod max_query_tests {
         // Query = max(2,5)
         // Solution = 4
         let a = vec![6, 5, 4, 2, 1, 3];
-        let mut tree = MaxSTree::empty_tree();
-        tree.build(&a);
+        let tree = MaxSTree::new(&a);
         assert_eq!(tree.max((2, 5)), Some(4));
     }
 
@@ -469,8 +482,7 @@ mod max_query_tests {
         // Query = max(2,5)
         // Solution = None, the query goes out of range!
         let a = vec![3, 1, 2];
-        let mut tree = MaxSTree::empty_tree();
-        tree.build(&a);
+        let tree = MaxSTree::new(&a);
         assert_eq!(tree.max((2, 5)), None);
     }
 
@@ -488,8 +500,7 @@ mod max_query_tests {
         // Query = max(0,6)
         // Solution = 7
         let a = vec![1, 2, 3, 4, 5, 6, 7, 8];
-        let mut tree = MaxSTree::empty_tree();
-        tree.build(&a);
+        let tree = MaxSTree::new(&a);
         assert_eq!(tree.max((0, 6)), Some(7));
     }
 
@@ -507,8 +518,7 @@ mod max_query_tests {
         // Query = max(0,0)
         // Solution = 1
         let a = vec![1, 2, 3, 4, 5, 6, 7, 8];
-        let mut tree = MaxSTree::empty_tree();
-        tree.build(&a);
+        let tree = MaxSTree::new(&a);
         assert_eq!(tree.max((0, 0)), Some(1));
     }
 
@@ -526,8 +536,7 @@ mod max_query_tests {
         // Query = max(0,2)
         // Solution = 4
         let a = vec![3, 5, 4, 2, 1];
-        let mut tree = MaxSTree::empty_tree();
-        tree.build(&a);
+        let tree = MaxSTree::new(&a);
         assert_eq!(tree.max((0, 2)), Some(5));
     }
 }
@@ -549,8 +558,7 @@ mod build_max_segment_tree_tests {
         // A =  1     2
         // p =  0     1
         let a = vec![1, 2];
-        let mut tree = MaxSTree::empty_tree();
-        tree.build(&a);
+        let tree = MaxSTree::new(&a);
         if let Some(idx) = tree.root {
             assert_eq!(tree.nodes[idx].key, 2)
         }
@@ -566,8 +574,7 @@ mod build_max_segment_tree_tests {
         // A =  1  3      2
         // p =  0  1      2
         let a = vec![1, 3, 2];
-        let mut tree = MaxSTree::empty_tree();
-        tree.build(&a);
+        let tree = MaxSTree::new(&a);
         if let Some(idx) = tree.root {
             assert_eq!(tree.nodes[idx].key, 3);
             if let (Some(l_idx), Some(r_idx)) = tree.nodes[idx].children {
@@ -587,8 +594,7 @@ mod build_max_segment_tree_tests {
         // A =  4   2   3   1
         // p =  0   1   2   3
         let a = vec![4, 2, 3, 1];
-        let mut tree = MaxSTree::empty_tree();
-        tree.build(&a);
+        let tree = MaxSTree::new(&a);
         if let Some(idx) = tree.root {
             assert_eq!(tree.nodes[idx].key, 4);
             if let (Some(l_idx), Some(r_idx)) = tree.nodes[idx].children {
@@ -618,8 +624,7 @@ mod build_max_segment_tree_tests {
         // A =  4   2    3  1     5
         // p =  0   1   2   3     4
         let a = vec![4, 2, 3, 1, 5];
-        let mut tree = MaxSTree::empty_tree();
-        tree.build(&a);
+        let tree = MaxSTree::new(&a);
         if let Some(idx) = tree.root {
             assert_eq!(tree.nodes[idx].key, 5);
             if let (Some(l_idx), Some(r_idx)) = tree.nodes[idx].children {
@@ -653,8 +658,7 @@ mod build_max_segment_tree_tests {
         // A =  4   2    6    1    5   3
         // p =  0   1   2     3    4   5
         let a = vec![4, 2, 6, 1, 5, 3];
-        let mut tree = MaxSTree::empty_tree();
-        tree.build(&a);
+        let tree = MaxSTree::new(&a);
         if let Some(idx) = tree.root {
             assert_eq!(tree.nodes[idx].key, 6);
             if let (Some(l_idx), Some(r_idx)) = tree.nodes[idx].children {
