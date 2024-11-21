@@ -11,29 +11,6 @@
 /// [SECOND-PROBLEM] [STATUS = on the high sea]
 use std::cmp;
 
-/// Helper fn which recursively construct a Max Segment Tree.
-/// For each node `n[i,j]`, `n[i,j].key` = maximum value among
-/// the elements in the range `[i, j]`.
-/// # Returns
-/// The index of the created node in the Max Segment Tree.
-/// The first call will return the index of the root.
-
-fn h_build(nodes: &mut Vec<MaxNode>, a: &Vec<usize>, l: usize, r: usize) -> usize {
-    if l == r {
-        // BASE CASE: LEAF
-        nodes.push(MaxNode::new(a[l], (None, None), (l, l)));
-    } else {
-        // INDUCTIVE CASE: Internal Node
-        let m = (l + r) / 2;
-        let lchd = h_build(nodes, &a, l, m);
-        let rchd = h_build(nodes, &a, m + 1, r);
-        let val = cmp::max(nodes[lchd].key, nodes[rchd].key);
-
-        nodes.push(MaxNode::new(val, (Some(lchd), Some(rchd)), (l, r)));
-    }
-    nodes.len() - 1
-}
-
 /// Represents a Node in a Segment Tree.
 /// The main difference compared to a Node in a Binary Tree is that
 /// we also specify the range of the Node, that is for which elements
@@ -63,16 +40,42 @@ pub struct MaxSTree {
 impl MaxSTree {
     /// Base Constructor
     /// Initializes an empty tree instance.
-    /// Note that this tree cannot be used as it is.
-    /// Users must call `build` to construct the Max Segment Tree.
-    pub fn new(a: &Vec<usize>) -> Self {
-        let mut temp: Vec<MaxNode> = Vec::new();
-        let root = h_build(&mut temp, a, 0, a.len() - 1);
-
+    pub fn empty_new() -> Self {
         Self {
-            nodes: temp,
-            root: Some(root),
+            nodes: Vec::new(),
+            root: None,
         }
+    }
+
+    /// Array Constructor
+    /// Initializes a Max Segment Tree indexing the elements in `a`.
+    pub fn new(a: &Vec<usize>) -> Self {
+        let mut tree = MaxSTree::empty_new();
+        tree.root = Some(tree.h_build(a, 0, a.len() - 1));
+        tree
+    }
+
+    /// Helper fn which recursively construct a Max Segment Tree.
+    /// For each node `n[i,j]`, `n[i,j].key` = maximum value among
+    /// the elements in the range `[i, j]`.
+    /// # Returns
+    /// The index of the created node in the Max Segment Tree.
+    /// The first call will return the index of the root.
+    fn h_build(&mut self, a: &Vec<usize>, l: usize, r: usize) -> usize {
+        if l == r {
+            // BASE CASE: LEAF
+            self.nodes.push(MaxNode::new(a[l], (None, None), (l, l)));
+        } else {
+            // INDUCTIVE CASE: Internal Node
+            let m = (l + r) / 2;
+            let lchd = self.h_build(&a, l, m);
+            let rchd = self.h_build(&a, m + 1, r);
+            let val = cmp::max(self.nodes[lchd].key, self.nodes[rchd].key);
+
+            self.nodes
+                .push(MaxNode::new(val, (Some(lchd), Some(rchd)), (l, r)));
+        }
+        self.nodes.len() - 1
     }
 
     /// A helper recursive fn that returns the maximum value within the range
@@ -140,7 +143,7 @@ impl MaxSTree {
 
     /// Helper recursive fn s.t given `u_range=[l,r]` and a value `t` then:
     /// ∀k in [l,r].A[k] = min(A[k], t)
-    fn helper_update(&mut self, u_range: (usize, usize), t: usize, idx: usize) -> usize {
+    fn h_update(&mut self, u_range: (usize, usize), t: usize, idx: usize) -> usize {
         let (u_l, u_r) = u_range;
         let (curr_l, curr_r) = self.nodes[idx].range;
 
@@ -156,13 +159,13 @@ impl MaxSTree {
         // Iterative Case Segment Overlap
         else {
             let val_l = if let Some(idx) = self.nodes[idx].children.0 {
-                Some(self.helper_update(u_range, t, idx))
+                Some(self.h_update(u_range, t, idx))
             } else {
                 None
             };
 
             let val_r = if let Some(idx) = self.nodes[idx].children.1 {
-                Some(self.helper_update(u_range, t, idx))
+                Some(self.h_update(u_range, t, idx))
             } else {
                 None
             };
@@ -179,7 +182,7 @@ impl MaxSTree {
     fn update(&mut self, u_range: (usize, usize), t: usize) {
         // TODO Check if t = O(n)
         if let Some(idx) = self.root {
-            self.helper_update(u_range, t, idx);
+            self.h_update(u_range, t, idx);
         }
     }
 }
