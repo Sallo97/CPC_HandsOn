@@ -270,6 +270,7 @@ impl FreqSTree {
     /// s.t each si = (l, r) where 0 <= l <= r <= n-1.
     /// The fn constructs an array `a[0, n-1]` s.t. each
     /// `a[i]` = # segments overlapping in position i
+    /// # Assumptions
     fn build_seg_array(s_set: Vec<(usize, usize)>) -> Vec<isize> {
         let n = s_set.len();
 
@@ -440,7 +441,10 @@ mod freq_node_tests {
 }
 
 /// A set of tests for `is_there` method
-/// TODO ADD BETTER DESCRIPTION
+/// For each test we construct a Frequency Segment Tree over a set of
+/// segments `S` and test various queries over it.
+/// For each test we provide a visual representation of the constructed
+/// tree, specifying the queries proposed and the answers they should get
 #[cfg(test)]
 mod is_there_tests {
     use crate::FreqSTree;
@@ -547,32 +551,8 @@ mod seg_array_tests {
 
     #[test]
     fn sat_2() {
-        // [TEST - 2]
-        //   |-|
-        //   |
-        // |-|
-        // |-|-|->
-        // 0 1 2
-        // Solution = [1; 3; 1]
-        let s = vec![(0, 1), (1, 1), (1, 2)];
-        let a = FreqSTree::build_seg_array(s);
-        assert_eq!(vec![1, 3, 1], a)
-    }
-
-    #[test]
-    fn sat_3() {
-        // [TEST - 3]
-
-        // Solution = [1; 1; 1]
-        let s = vec![(0, 0), (1, 1), (2, 2)];
-        let a = FreqSTree::build_seg_array(s);
-        assert_eq!(vec![1, 1, 1], a)
-    }
-
-    #[test]
-    fn sat_4() {
         // [TEST - 4]
-
+        // Edge case we try to pass and empty set of strings
         // Solution = [] EMPTY
         let s = vec![];
         let a = FreqSTree::build_seg_array(s);
@@ -590,76 +570,6 @@ mod update_query_tests {
 
     #[test]
     fn ut_1() {
-        // [TEST - 1] The constructed tree should be:
-        // Query = Update((0,1), 1)
-        //         2              1
-        //       /   \    =>    /   \
-        // A =  1     2        1     1
-        // p =  0     1        0     1
-        let a = vec![1, 2];
-        let mut tree = MaxSTree::new(&a).unwrap();
-        tree.update((0, 1), 1);
-        if let Some(idx) = tree.root {
-            assert_eq!(tree.nodes[idx].key, 1);
-        }
-    }
-
-    #[test]
-    fn ut_2() {
-        // [TEST - 2] The constructed tree should be:
-        // Query = Update((2,2), 1)
-        //           3                 3
-        //         /   \            /    \
-        //        3     \    =>    3      \
-        //       / \     \        / \      \
-        // A =  1  3      2      1  3       1
-        // p =  0  1      2      0  1       2
-        let a = vec![1, 3, 2];
-        let mut tree = MaxSTree::new(&a).unwrap();
-        tree.update((2, 2), 1);
-        if let Some(idx) = tree.root {
-            assert_eq!(tree.nodes[idx].key, 3);
-            if let (Some(l_idx), Some(r_idx)) = tree.nodes[idx].children {
-                assert_eq!(tree.nodes[l_idx].key, 3);
-                assert_eq!(tree.nodes[r_idx].key, 1)
-            }
-        }
-    }
-
-    #[test]
-    fn ut_3() {
-        // [TEST - 3] The constructed tree should be:
-        // Query = Update((1,2), 2)
-        // Query = Update((1,2), 3) Doesn't do nothing!
-        //            4                 4
-        //          /   \             /    \
-        //         4     3    =>     4      2
-        //       /  \   /  \        / \    / \
-        // A =  4   2   3   1      4   2  2   1
-        // p =  0   1   2   3      0   1  2   3
-        let a = vec![4, 2, 3, 1];
-        let mut tree = MaxSTree::new(&a).unwrap();
-        tree.update((1, 2), 2);
-        tree.update((1, 2), 3);
-        if let Some(idx) = tree.root {
-            assert_eq!(tree.nodes[idx].key, 4);
-            if let (Some(l_idx), Some(r_idx)) = tree.nodes[idx].children {
-                assert_eq!(tree.nodes[l_idx].key, 4);
-                assert_eq!(tree.nodes[r_idx].key, 2);
-                if let (Some(l_idx), Some(r_idx)) = tree.nodes[l_idx].children {
-                    assert_eq!(tree.nodes[l_idx].key, 4);
-                    assert_eq!(tree.nodes[r_idx].key, 2);
-                }
-                if let (Some(l_idx), Some(r_idx)) = tree.nodes[r_idx].children {
-                    assert_eq!(tree.nodes[l_idx].key, 2);
-                    assert_eq!(tree.nodes[r_idx].key, 1)
-                }
-            }
-        }
-    }
-
-    #[test]
-    fn ut_4() {
         // [TEST - 4] The constructed tree should be:
         // Query = Update((0,3), 1)
         //               5                        5
@@ -695,7 +605,7 @@ mod update_query_tests {
     }
 
     #[test]
-    fn ut_5() {
+    fn ut_2() {
         // [TEST - 5] The constructed tree should be:
         // Query = Update((7,9), 10) Out of Range doesn't do nothing
         //                  6
@@ -777,60 +687,6 @@ mod max_query_tests {
         let tree = MaxSTree::new(&a).unwrap();
         assert_eq!(tree.max((2, 5)), None);
     }
-
-    #[test]
-    fn mt_3() {
-        // [TEST - 3] The constructed tree should be:
-        //                      8
-        //               /             \
-        //              !4!               8
-        //          /      \         /     \
-        //         2        4        5       8
-        //       /  \     /  \     /  \    /  \
-        // A =  1    2    3   4    5   6   !7! 8
-        // p =  0   1     2   3    4   5   6   7
-        // Query = max(0,6)
-        // Solution = 7
-        let a = vec![1, 2, 3, 4, 5, 6, 7, 8];
-        let tree = MaxSTree::new(&a).unwrap();
-        assert_eq!(tree.max((0, 6)), Some(7));
-    }
-
-    #[test]
-    fn mt_4() {
-        // [TEST - 4] The constructed tree should be:
-        //                      8
-        //               /             \
-        //              !4!               8
-        //          /      \         /     \
-        //         2        4        5       8
-        //       /  \     /  \     /  \    /  \
-        // A =  1    2    3   4    5   6   !7! 8
-        // p =  0   1     2   3    4   5   6   7
-        // Query = max(0,0)
-        // Solution = 1
-        let a = vec![1, 2, 3, 4, 5, 6, 7, 8];
-        let tree = MaxSTree::new(&a).unwrap();
-        assert_eq!(tree.max((0, 0)), Some(1));
-    }
-
-    #[test]
-    fn mt_5() {
-        // [TEST - 5] The constructed tree should be:
-        //                5
-        //           /         \
-        //          !5!         \
-        //         /  \          \
-        //        5    \         2
-        //       / \    \       /  \
-        // A =  3   5    4     2    1
-        // p =  0   1    2     3    4
-        // Query = max(0,2)
-        // Solution = 4
-        let a = vec![3, 5, 4, 2, 1];
-        let tree = MaxSTree::new(&a).unwrap();
-        assert_eq!(tree.max((0, 2)), Some(5));
-    }
 }
 
 /// A set of tests for constructing Max Segment Tree.
@@ -845,102 +701,6 @@ mod build_max_segment_tree_tests {
     #[test]
     fn mst_1() {
         // [TEST - 1] The constructed tree should be:
-        //         2
-        //       /   \
-        // A =  1     2
-        // p =  0     1
-        let a = vec![1, 2];
-        let tree = MaxSTree::new(&a).unwrap();
-        if let Some(idx) = tree.root {
-            assert_eq!(tree.nodes[idx].key, 2)
-        }
-    }
-
-    #[test]
-    fn mst_2() {
-        // [TEST - 2] The constructed tree should be:
-        //           3
-        //         /   \
-        //        3     \
-        //       / \     \
-        // A =  1  3      2
-        // p =  0  1      2
-        let a = vec![1, 3, 2];
-        let tree = MaxSTree::new(&a).unwrap();
-        if let Some(idx) = tree.root {
-            assert_eq!(tree.nodes[idx].key, 3);
-            if let (Some(l_idx), Some(r_idx)) = tree.nodes[idx].children {
-                assert_eq!(tree.nodes[l_idx].key, 3);
-                assert_eq!(tree.nodes[r_idx].key, 2)
-            }
-        }
-    }
-
-    #[test]
-    fn mst_3() {
-        // [TEST - 3] The constructed tree should be:
-        //            4
-        //          /   \
-        //         4     3
-        //       /  \   /  \
-        // A =  4   2   3   1
-        // p =  0   1   2   3
-        let a = vec![4, 2, 3, 1];
-        let tree = MaxSTree::new(&a).unwrap();
-        if let Some(idx) = tree.root {
-            assert_eq!(tree.nodes[idx].key, 4);
-            if let (Some(l_idx), Some(r_idx)) = tree.nodes[idx].children {
-                assert_eq!(tree.nodes[l_idx].key, 4);
-                assert_eq!(tree.nodes[r_idx].key, 3);
-                if let (Some(l_idx), Some(r_idx)) = tree.nodes[l_idx].children {
-                    assert_eq!(tree.nodes[l_idx].key, 4);
-                    assert_eq!(tree.nodes[r_idx].key, 2);
-                }
-                if let (Some(l_idx), Some(r_idx)) = tree.nodes[r_idx].children {
-                    assert_eq!(tree.nodes[l_idx].key, 3);
-                    assert_eq!(tree.nodes[r_idx].key, 1);
-                }
-            }
-        }
-    }
-
-    #[test]
-    fn mst_4() {
-        // [TEST - 4] The constructed tree should be:
-        //               5
-        //            /     \
-        //           4       \
-        //          / \        5
-        //         4   \      / \
-        //       /  \   \    /   \
-        // A =  4   2    3  1     5
-        // p =  0   1   2   3     4
-        let a = vec![4, 2, 3, 1, 5];
-        let tree = MaxSTree::new(&a).unwrap();
-        if let Some(idx) = tree.root {
-            assert_eq!(tree.nodes[idx].key, 5);
-            if let (Some(l_idx), Some(r_idx)) = tree.nodes[idx].children {
-                assert_eq!(tree.nodes[l_idx].key, 4);
-                assert_eq!(tree.nodes[r_idx].key, 5);
-                if let (Some(l_idx), Some(r_idx)) = tree.nodes[l_idx].children {
-                    assert_eq!(tree.nodes[l_idx].key, 4);
-                    assert_eq!(tree.nodes[r_idx].key, 3);
-                    if let (Some(l_idx), Some(r_idx)) = tree.nodes[l_idx].children {
-                        assert_eq!(tree.nodes[l_idx].key, 4);
-                        assert_eq!(tree.nodes[r_idx].key, 2);
-                    }
-                }
-                if let (Some(l_idx), Some(r_idx)) = tree.nodes[r_idx].children {
-                    assert_eq!(tree.nodes[l_idx].key, 1);
-                    assert_eq!(tree.nodes[r_idx].key, 5);
-                }
-            }
-        }
-    }
-
-    #[test]
-    fn mst_5() {
-        // [TEST - 5] The constructed tree should be:
         //                  6
         //            /          \
         //           6            5
