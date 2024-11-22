@@ -11,7 +11,6 @@ fn main() {
 
     // Executing Problem #1
     println!("Testing Problem #1 - MinMax");
-    // Create an iterator over all tests
     for i in 0..11 {
         let files = get_next_files(1, i);
         let res = min_max(files.0, files.1);
@@ -26,6 +25,9 @@ fn main() {
 
     // Executing Problem #2
     println!("Testing Problem #1 - IsThere");
+    for i in 0..8 {
+        let files = get_next_files(1, i);
+    }
 }
 
 fn get_next_files(i: usize, j: usize) -> (File, File) {

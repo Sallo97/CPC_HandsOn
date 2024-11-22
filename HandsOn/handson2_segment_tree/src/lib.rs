@@ -293,9 +293,11 @@ impl FreqSTree {
 
         let mut a = vec![0; n];
         for &s in s_set.iter() {
-            a[s.0] += 1;
-            if s.1 + 1 < n {
-                a[s.1 + 1] -= 1;
+            let l = s.0 - 1;
+            let r = s.1 - 1;
+            a[l] += 1;
+            if r + 1 < n {
+                a[r + 1] -= 1;
             }
         }
 
@@ -378,7 +380,7 @@ impl FreqSTree {
     /// TODO Add better description
     pub fn is_there(&self, q_range: (usize, usize), k: usize) -> usize {
         let idx = self.root.unwrap();
-
+        let q_range = (q_range.0 - 1, q_range.1 - 1);
         // Check if the range is indexed by the tree
         if !(q_range.0 >= self.nodes[idx].range.0 && q_range.1 <= self.nodes[idx].range.1) {
             eprintln!("Range not indexed by the tree!");
@@ -490,21 +492,21 @@ mod is_there_tests {
         //       (<1;2>)    (<2:1>; <3:1>)    (<2:1>; <3:1>)   \
         //        /   \          /    \            /     \      \
         // A =   1     1         2     3          3      2       1
-        // pos = 0     1         2     3          4      5       6
+        // pos = 1     2         3     4          5      6       7
         // Query: IsThere((0,5), 1) -> Answer: 1
         // Query: IsThere((4,6), 2) -> Answer: 1
         // Query: IsThere((2,6), 3) -> Answer: 1
         // Query: IsThere((3,6), 0) -> Answer: 0
-        let s = vec![(0, 0), (1, 3), (2, 3), (3, 5), (4, 4), (4, 5), (6, 6)];
+        let s = vec![(1, 1), (2, 4), (3, 4), (4, 6), (5, 5), (5, 6), (7, 7)];
         let tree = FreqSTree::new(s).unwrap();
 
-        let res_1 = tree.is_there((0, 5), 1);
+        let res_1 = tree.is_there((1, 6), 1);
         assert_eq!(res_1, 1);
-        let res_2 = tree.is_there((4, 6), 2);
+        let res_2 = tree.is_there((5, 7), 2);
         assert_eq!(res_2, 1);
-        let res_3 = tree.is_there((2, 6), 3);
+        let res_3 = tree.is_there((3, 7), 3);
         assert_eq!(res_3, 1);
-        let res_4 = tree.is_there((3, 6), 0);
+        let res_4 = tree.is_there((4, 7), 0);
         assert_eq!(res_4, 0);
     }
 }
@@ -529,8 +531,8 @@ mod build_fst_tests {
         //       (<1;2>)    (<2:1>; <3:1>)    (<2:1>; <3:1>)   \
         //        /   \          /    \            /     \      \
         // A =   1     1         2     3          3      2       1
-        // pos = 0     1         2     3          4      5       6
-        let s = vec![(0, 0), (1, 3), (2, 3), (3, 5), (4, 4), (4, 5), (6, 6)];
+        // pos = 1     2         3     4          5      6
+        let s = vec![(1, 1), (2, 4), (3, 4), (4, 6), (5, 5), (5, 6), (7, 7)];
         let tree = FreqSTree::new(s).unwrap();
         let root_idx = tree.root.unwrap();
         assert_eq!(tree.nodes[root_idx].key.len(), 3);
@@ -593,7 +595,7 @@ mod seg_array_tests {
         // |-|-|-|-|-|-|->
         // 0 1 2 3 4 5 6
         // Solution = [1; 1; 2; 3; 3; 2; 1]
-        let s = vec![(0, 0), (1, 3), (2, 3), (3, 5), (4, 4), (4, 5), (6, 6)];
+        let s = vec![(1, 1), (2, 4), (3, 4), (4, 6), (5, 5), (5, 6), (7, 7)];
         let a = FreqSTree::build_seg_array(s);
         assert_eq!(vec![1, 1, 2, 3, 3, 2, 1], a)
     }
