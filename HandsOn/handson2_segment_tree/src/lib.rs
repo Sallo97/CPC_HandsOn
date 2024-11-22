@@ -2,13 +2,18 @@
 /// to the two problems given for the 2nd HandsOn of Competitive Programming and Contest
 /// at the University of Pisa (24/25)
 ///
-/// [FIRST-PROBLEM] [STATUS = DONE]
+/// [FIRST-PROBLEM]
 /// You are given an array A[1,n] of n positive integers, each integer is at most n.
 /// You have to build a data structure to answer two different types of queries:
 /// - Update(i,j,T): ∀k in [1,n].A[k] = min(A[k], T)
 /// - Max(i, j) that returns the largest value in A[i...j]
 ///
-/// [SECOND-PROBLEM] [STATUS = on the high sea]
+/// [SECOND-PROBLEM]
+/// You are given a set of n segments S = {s1; ...; sn} s.t each si(li, ri) with
+/// 0 <=li <= ri <= n-1.
+/// Develop a data structure to answer the query IsThere(i,j,k) which returns 1 if there
+/// exists a position p in [i,j] s.t. exactly k segments contsin position p, 0 otherwise.
+/// The data structure must solve a IsThere query in O(log(n))
 use std::{cmp, collections::HashMap};
 
 /// Represents a Node in a Segment Tree.
@@ -129,6 +134,7 @@ impl MaxSTree {
 
     /// Returns the maximum value within `query_range=[l, r]` as indexed by the tree.
     pub fn max(&self, q_range: (usize, usize)) -> Option<usize> {
+        let q_range = (q_range.0 - 1, q_range.1 - 1);
         let idx = self.root.unwrap();
 
         // Check if the range is indexed by the tree
@@ -137,6 +143,15 @@ impl MaxSTree {
             return None;
         }
         self.h_max(q_range, idx)
+    }
+
+    /// Given `u_range=[l,r]` and a value `t` then:
+    /// ∀k in [l,r].A[k] = min(A[k], t)
+    pub fn update(&mut self, u_range: (usize, usize), t: usize) {
+        // TODO Check if t = O(n)
+        let u_range = (u_range.0 - 1, u_range.1 - 1);
+        let idx = self.root.unwrap();
+        self.h_update(u_range, t, idx);
     }
 
     /// Helper recursive fn s.t given `u_range=[l,r]` and a value `t` then:
@@ -169,14 +184,6 @@ impl MaxSTree {
             }
             self.nodes[idx].key
         }
-    }
-
-    /// Given `u_range=[l,r]` and a value `t` then:
-    /// ∀k in [l,r].A[k] = min(A[k], t)
-    pub fn update(&mut self, u_range: (usize, usize), t: usize) {
-        // TODO Check if t = O(n)
-        let idx = self.root.unwrap();
-        self.h_update(u_range, t, idx);
     }
 }
 
@@ -621,10 +628,10 @@ mod update_query_tests {
         //         4   \      / \         1     \      / \
         //       /  \   \    /   \      /   \    \    /   \
         // A =  4   2    3  1     5     1    1    1   1   5
-        // p =  0   1   2   3     4
+        // p =  1   2    3  4     5     1    2    3   4   5
         let a = vec![4, 2, 3, 1, 5];
         let mut tree = MaxSTree::new(&a).unwrap();
-        tree.update((0, 3), 1);
+        tree.update((1, 4), 1);
         if let Some(idx) = tree.root {
             assert_eq!(tree.nodes[idx].key, 5);
             if let (Some(l_idx), Some(r_idx)) = tree.nodes[idx].children {
@@ -648,7 +655,7 @@ mod update_query_tests {
 
     #[test]
     fn ut_2() {
-        // [TEST - 2] The constructed tree should be:
+        // [TEST - 2]
         // Query = Update((7,9), 10) Out of Range doesn't do nothing
         //                  6
         //            /          \
@@ -657,7 +664,7 @@ mod update_query_tests {
         //         4   \         5   \
         //       /  \   \      /  \   \
         // A =  4   2    6    1    5   3
-        // p =  0   1   2     3    4   5
+        // p =  1   2   3     4    5   6
         let a = vec![4, 2, 6, 1, 5, 3];
         let mut tree = MaxSTree::new(&a).unwrap();
         tree.update((7, 9), 10);
@@ -706,12 +713,12 @@ mod max_query_tests {
         //         6   \        2    \
         //       /  \   \      /  \   \
         // A =  6    5  !4!    2    1   3
-        // p =  0   1    2     3    4   5
-        // Query = max(2,5)
+        // p =  1   2    3     4    5   6
+        // Query = max(3,6)
         // Solution = 4
         let a = vec![6, 5, 4, 2, 1, 3];
         let tree = MaxSTree::new(&a).unwrap();
-        assert_eq!(tree.max((2, 5)), Some(4));
+        assert_eq!(tree.max((3, 6)), Some(4));
     }
 
     #[test]
@@ -722,7 +729,7 @@ mod max_query_tests {
         //         3   \
         //       /  \   \
         // A =  3    1   2
-        // p =  0   1    2
+        // p =  1   2    3
         // Query = max(2,5)
         // Solution = None, the query goes out of range!
         let a = vec![3, 1, 2];
