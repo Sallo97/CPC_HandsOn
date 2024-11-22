@@ -307,7 +307,6 @@ impl FreqSTree {
     fn h_build(&mut self, a: &Vec<isize>, l: usize, r: usize) -> usize {
         // Base Case - Leaf
         if l == r {
-            // Add Node here
             self.nodes.push(FreqNode::new_leaf(a, l));
         }
         // Inductive Case - Internal Node
@@ -452,10 +451,12 @@ mod freq_node_tests {
         assert_eq!(*node_1.key.get(&3).unwrap(), 1);
 
         let node_2 = FreqNode::new_node((&leaf_4, &leaf_5), (4, 5), (4, 5));
+        assert_eq!(node_2.key.len(), 2);
         assert_eq!(*node_2.key.get(&2).unwrap(), 1);
         assert_eq!(*node_2.key.get(&3).unwrap(), 1);
 
         let node_3 = FreqNode::new_node((&node_2, &leaf_6), (7, 6), (4, 6));
+        assert_eq!(node_3.key.len(), 3);
         assert_eq!(*node_3.key.get(&1).unwrap(), 1);
         assert_eq!(*node_3.key.get(&2).unwrap(), 1);
         assert_eq!(*node_3.key.get(&3).unwrap(), 1);
@@ -525,26 +526,45 @@ mod build_fst_tests {
         let s = vec![(0, 0), (1, 3), (2, 3), (3, 5), (4, 4), (4, 5), (6, 6)];
         let tree = FreqSTree::new(s).unwrap();
         let root_idx = tree.root.unwrap();
-        // assert_eq!(tree.nodes[root_idx].key, vec![0, 3, 2, 2, 0, 0, 0]);
-        // {
-        //     // Checking LEFT Subtree
-        //     let root_idx = tree.nodes[root_idx].children.0.unwrap();
-        //     assert_eq!(tree.nodes[root_idx].key, vec![0, 2, 1, 1, 0, 0, 0]);
-        //     let left_idx = tree.nodes[root_idx].children.0.unwrap();
-        //     let right_idx = tree.nodes[root_idx].children.1.unwrap();
-        //     assert_eq!(tree.nodes[left_idx].key, vec![0, 2, 0, 0, 0, 0, 0]);
-        //     assert_eq!(tree.nodes[right_idx].key, vec![0, 0, 1, 1, 0, 0, 0])
-        // }
+        assert_eq!(tree.nodes[root_idx].key.len(), 3);
+        assert_eq!(*tree.nodes[root_idx].key.get(&1).unwrap(), 3);
+        assert_eq!(*tree.nodes[root_idx].key.get(&2).unwrap(), 2);
+        assert_eq!(*tree.nodes[root_idx].key.get(&3).unwrap(), 2);
+        {
+            // Checking LEFT Subtree
+            let root_idx = tree.nodes[root_idx].children.0.unwrap();
+            assert_eq!(tree.nodes[root_idx].key.len(), 3);
+            assert_eq!(*tree.nodes[root_idx].key.get(&1).unwrap(), 2);
+            assert_eq!(*tree.nodes[root_idx].key.get(&2).unwrap(), 1);
+            assert_eq!(*tree.nodes[root_idx].key.get(&3).unwrap(), 1);
 
-        // {
-        //     // Checking RIGHT Subtree
-        //     let root_idx = tree.nodes[root_idx].children.1.unwrap();
-        //     assert_eq!(tree.nodes[root_idx].key, vec![0, 1, 1, 1, 0, 0, 0]);
-        //     let left_idx = tree.nodes[root_idx].children.0.unwrap();
-        //     let right_idx = tree.nodes[root_idx].children.1.unwrap();
-        //     assert_eq!(tree.nodes[left_idx].key, vec![0, 0, 1, 1, 0, 0, 0]);
-        //     assert_eq!(tree.nodes[right_idx].key, vec![0, 1, 0, 0, 0, 0, 0])
-        // }
+            let left_idx = tree.nodes[root_idx].children.0.unwrap();
+            assert_eq!(tree.nodes[left_idx].key.len(), 1);
+            assert_eq!(*tree.nodes[left_idx].key.get(&1).unwrap(), 2);
+
+            let right_idx = tree.nodes[root_idx].children.1.unwrap();
+            assert_eq!(tree.nodes[right_idx].key.len(), 2);
+            assert_eq!(*tree.nodes[right_idx].key.get(&2).unwrap(), 1);
+            assert_eq!(*tree.nodes[right_idx].key.get(&3).unwrap(), 1);
+        }
+
+        {
+            // Checking RIGHT Subtree
+            let root_idx = tree.nodes[root_idx].children.1.unwrap();
+            assert_eq!(tree.nodes[root_idx].key.len(), 3);
+            assert_eq!(*tree.nodes[root_idx].key.get(&1).unwrap(), 1);
+            assert_eq!(*tree.nodes[root_idx].key.get(&2).unwrap(), 1);
+            assert_eq!(*tree.nodes[root_idx].key.get(&3).unwrap(), 1);
+
+            let left_idx = tree.nodes[root_idx].children.0.unwrap();
+            assert_eq!(tree.nodes[left_idx].key.len(), 2);
+            assert_eq!(*tree.nodes[left_idx].key.get(&2).unwrap(), 1);
+            assert_eq!(*tree.nodes[left_idx].key.get(&3).unwrap(), 1);
+
+            let right_idx = tree.nodes[root_idx].children.1.unwrap();
+            assert_eq!(tree.nodes[right_idx].key.len(), 1);
+            assert_eq!(*tree.nodes[right_idx].key.get(&1).unwrap(), 1);
+        }
     }
 }
 
