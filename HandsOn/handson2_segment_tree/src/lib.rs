@@ -53,7 +53,7 @@ impl MaxSTree {
     /// If `a` is empty, then no tree will be constructed (`None` will be returned)
     pub fn new(a: &Vec<usize>) -> Option<Self> {
         // Check if `a` is empty
-        if a.len() == 0 {
+        if a.is_empty() {
             eprintln!("Empty array passed, no tree will be constructed");
             return None;
         }
@@ -189,14 +189,14 @@ struct FreqNode {
 impl FreqNode {
     /// Base constructor
     /// TODO add better description
-    fn new_leaf(a: &Vec<isize>, n: usize, i: usize) -> Self {
-        let mut key = vec![0; n];
-        let idx = usize::try_from(a[i]).unwrap();
+    fn new_leaf(a: &Vec<isize>, pos: usize) -> Self {
+        let mut key = vec![0; a.len()];
+        let idx = usize::try_from(a[pos]).unwrap();
         key[idx] = 1;
         Self {
             key,
             children: (None, None),
-            range: (i, i),
+            range: (pos, pos),
         }
     }
 
@@ -209,6 +209,8 @@ impl FreqNode {
     ) -> Self {
         // ∀i in [0, n-1].temp[i] = a[i] + b[i]
         let mut temp = vec![0; n];
+
+        // TODO Vedi se riesci a renderlo una scan
         for i in 0..n {
             temp[i] = nodes.0.key[i] + nodes.1.key[i];
         }
@@ -221,9 +223,16 @@ impl FreqNode {
         }
     }
 
-    /// Check if there exists a key whose content is `k`
-    fn check_k(k: usize) -> Option<usize> {
-        None
+    /// A node as as `key` an HashTable of pairs <`s`,`p`> s.t.
+    /// - s = [0, #segments]
+    /// - p = # of positions having s segments
+    /// key(k) >= 1 -> 1, 0
+    fn exists_positions(&self, k: usize) -> usize {
+        if self.key[k] >= 1 {
+            1
+        } else {
+            0
+        }
     }
 }
 
@@ -244,11 +253,17 @@ impl FreqSTree {
 
     /// Array Constructor
     /// Initializes a Max Segment Tree indexing the elements in `a`.
-    pub fn new(s: Vec<(usize, usize)>) -> Self {
+    pub fn new(s: Vec<(usize, usize)>) -> Option<Self> {
+        // Check that s is not empty
+        if s.is_empty() {
+            eprintln!("Empty set passed, no tree will be constructed");
+            return None;
+        }
+
         let mut tree = FreqSTree::empty_new();
         let a = FreqSTree::build_seg_array(s);
         tree.root = Some(tree.h_build(&a, 0, a.len() - 1));
-        tree
+        Some(tree)
     }
 
     /// Given a set of segments `s_set` = {s1; ...; sn}
@@ -257,10 +272,6 @@ impl FreqSTree {
     /// `a[i]` = # segments overlapping in position i
     fn build_seg_array(s_set: Vec<(usize, usize)>) -> Vec<isize> {
         let n = s_set.len();
-
-        if n == 0 {
-            return vec![];
-        }
 
         let mut a = vec![0; n];
         for &s in s_set.iter() {
@@ -286,7 +297,7 @@ impl FreqSTree {
         // Base Case - Leaf
         if l == r {
             // Add Node here
-            self.nodes.push(FreqNode::new_leaf(a, a.len(), l));
+            self.nodes.push(FreqNode::new_leaf(a, l));
         }
         // Inductive Case - Internal Node
         else {
@@ -294,7 +305,6 @@ impl FreqSTree {
             let lchd = self.h_build(&a, l, m);
             let rchd = self.h_build(&a, m + 1, r);
 
-            // Add Node here
             self.nodes.push(FreqNode::new_node(
                 (&self.nodes[lchd], &self.nodes[rchd]),
                 (lchd, rchd),
@@ -312,44 +322,156 @@ impl FreqSTree {
         let c_range = self.nodes[idx].range;
 
         // Base Case #1 - No Overlap
-        if q_range.0 <= c_range.0 && c_range.1 <= q_range.1 {
+        if q_range.1 < c_range.0 || c_range.1 < q_range.0 {
             0
         }
         // Base Case #2 - Total Overlap
         else if q_range.0 <= c_range.0 && c_range.1 <= q_range.1 {
-            // Return the Check in the node
-            0
+            self.nodes[idx].exists_positions(k)
         }
         // Iterative Case - Partial Overlap
         else {
             let m = (c_range.0 + c_range.1) / 2;
+
+            // Part of the solution in the LEFT SIDE
             let sol_l = if q_range.0 <= m {
-                if let Some(idx) = self.nodes[idx].children.0 {
-                    // Return the Check function
-                    0
-                } else {
-                    0
-                }
+                let idx_l = self.nodes[idx].children.0.unwrap();
+                let r = cmp::min(q_range.1, m);
+                self.h_is_there((q_range.0, r), idx_l, k)
             } else {
                 0
             };
+
             if sol_l == 1 {
                 return 1;
             }
 
-            // Check for the right-side
+            // Part of the solution in the RIGHT SIDE
             let sol_r = if q_range.1 > m {
-                if let Some(idx) = self.nodes[idx].children.1 {
-                    // Return the Check function
-                    0
-                } else {
-                    0
-                }
+                let idx_r = self.nodes[idx].children.1.unwrap();
+                let l = cmp::max(q_range.0, m);
+                self.h_is_there((l, q_range.1), idx_r, k)
             } else {
                 0
             };
+
             sol_r
         }
+    }
+
+    /// TODO Add better description
+    pub fn is_there(&self, q_range: (usize, usize), k: usize) -> usize {
+        let idx = self.root.unwrap();
+
+        // Check if the range is indexed by the tree
+        if !(q_range.0 >= self.nodes[idx].range.0 && q_range.1 <= self.nodes[idx].range.1) {
+            eprintln!("Range not indexed by the tree!");
+            return 0;
+        }
+        self.h_is_there(q_range, idx, k)
+    }
+}
+
+/// A set of tests for constructors of `FreqNode`
+/// For each test we provide the array `A[1,n]` of segments overlapping position
+/// and construct a leaf or internal node according to `A`
+#[cfg(test)]
+mod freq_node_tests {
+    use crate::FreqNode;
+
+    #[test]
+    fn fnt_1() {
+        // [TEST - 1]
+        // In this test we produce all the leaf generated by A s.t.
+        // A = [1, 1, 2, 3, 3, 2, 1]
+        // for i in [0, n-1]
+        // for all j in [0,n-1].leaf_i[j] = { 1 if j=a[i] }
+        //                                  { 0 otherwise }
+        let a = vec![1, 1, 2, 3, 3, 2, 1];
+        let leaf_0 = FreqNode::new_leaf(&a, 0);
+        assert_eq!(leaf_0.key, vec![0, 1, 0, 0, 0, 0, 0]);
+
+        let leaf_1 = FreqNode::new_leaf(&a, 1);
+        assert_eq!(leaf_1.key, vec![0, 1, 0, 0, 0, 0, 0]);
+
+        let leaf_2 = FreqNode::new_leaf(&a, 2);
+        assert_eq!(leaf_2.key, vec![0, 0, 1, 0, 0, 0, 0]);
+
+        let leaf_3 = FreqNode::new_leaf(&a, 3);
+        assert_eq!(leaf_3.key, vec![0, 0, 0, 1, 0, 0, 0]);
+
+        let leaf_4 = FreqNode::new_leaf(&a, 4);
+        assert_eq!(leaf_4.key, vec![0, 0, 0, 1, 0, 0, 0]);
+
+        let leaf_5 = FreqNode::new_leaf(&a, 5);
+        assert_eq!(leaf_5.key, vec![0, 0, 1, 0, 0, 0, 0]);
+
+        let leaf_6 = FreqNode::new_leaf(&a, 6);
+        assert_eq!(leaf_6.key, vec![0, 1, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn fnt_2() {
+        // [TEST - 2]
+        // Given the leaf from the previous test we
+        // produce the nodes whose childesn are the leaf
+        // pairwise (node_1 will have as children leaf_0 and leaf_1)
+        let a = vec![1, 1, 2, 3, 3, 2, 1];
+        let leaf_0 = FreqNode::new_leaf(&a, 0);
+        let leaf_1 = FreqNode::new_leaf(&a, 1);
+        let leaf_2 = FreqNode::new_leaf(&a, 2);
+        let leaf_3 = FreqNode::new_leaf(&a, 3);
+        let leaf_4 = FreqNode::new_leaf(&a, 4);
+        let leaf_5 = FreqNode::new_leaf(&a, 5);
+        let leaf_6 = FreqNode::new_leaf(&a, 6);
+
+        let node_0 = FreqNode::new_node((&leaf_0, &leaf_1), (0, 1), (0, 1), a.len());
+        assert_eq!(node_0.key, vec![0, 2, 0, 0, 0, 0, 0]);
+
+        let node_1 = FreqNode::new_node((&leaf_2, &leaf_3), (2, 3), (2, 3), a.len());
+        assert_eq!(node_1.key, vec![0, 0, 1, 1, 0, 0, 0]);
+
+        let node_2 = FreqNode::new_node((&leaf_4, &leaf_5), (4, 5), (4, 5), a.len());
+        assert_eq!(node_2.key, vec![0, 0, 1, 1, 0, 0, 0]);
+
+        let node_3 = FreqNode::new_node((&node_2, &leaf_6), (7, 6), (4, 6), a.len());
+        assert_eq!(node_3.key, vec![0, 1, 1, 1, 0, 0, 0]);
+    }
+}
+
+/// A set of tests for `is_there` method
+/// TODO ADD BETTER DESCRIPTION
+#[cfg(test)]
+mod is_there_tests {
+    use crate::FreqSTree;
+
+    #[test]
+    fn itt_1() {
+        // [TEST - 1]
+        // S = {(0, 0); (1, 3); (2, 3); (3, 5); (4, 4); (4, 5); (6, 6)}
+        //                  (<1:3>; <2:2>; <3,2>)
+        //                   /                  \
+        //         (<1:2>; <2:1>; <3:1>)     (<1:1>; <2:1>; <3:1>)
+        //           /        \                    /          \
+        //       (<1;2>)    (<2:1>; <3:1>)    (<2:1>; <3:1>)   \
+        //        /   \          /    \            /     \      \
+        // A =   1     1         2     3          3      2       1
+        // pos = 0     1         2     3          4      5       6
+        // Query: IsThere((0,5), 1) -> Answer: 1
+        // Query: IsThere((4,6), 2) -> Answer: 1
+        // Query: IsThere((2,6), 3) -> Answer: 1
+        // Query: IsThere((3,6), 0) -> Answer: 0
+        let s = vec![(0, 0), (1, 3), (2, 3), (3, 5), (4, 4), (4, 5), (6, 6)];
+        let tree = FreqSTree::new(s).unwrap();
+
+        let res_1 = tree.is_there((0, 5), 1);
+        assert_eq!(res_1, 1);
+        let res_2 = tree.is_there((4, 6), 2);
+        assert_eq!(res_2, 1);
+        let res_3 = tree.is_there((2, 6), 3);
+        assert_eq!(res_3, 1);
+        let res_4 = tree.is_there((3, 6), 0);
+        assert_eq!(res_4, 0);
     }
 }
 
@@ -375,9 +497,27 @@ mod build_fst_tests {
         // A =   1     1         2     3          3      2       1
         // pos = 0     1         2     3          4      5       6
         let s = vec![(0, 0), (1, 3), (2, 3), (3, 5), (4, 4), (4, 5), (6, 6)];
-        let tree = FreqSTree::new(s);
-        if let Some(idx) = tree.root {
-            assert_eq!(tree.nodes[idx].key, vec![0, 3, 2, 2, 0, 0, 0])
+        let tree = FreqSTree::new(s).unwrap();
+        let root_idx = tree.root.unwrap();
+        assert_eq!(tree.nodes[root_idx].key, vec![0, 3, 2, 2, 0, 0, 0]);
+        {
+            // Checking LEFT Subtree
+            let root_idx = tree.nodes[root_idx].children.0.unwrap();
+            assert_eq!(tree.nodes[root_idx].key, vec![0, 2, 1, 1, 0, 0, 0]);
+            let left_idx = tree.nodes[root_idx].children.0.unwrap();
+            let right_idx = tree.nodes[root_idx].children.1.unwrap();
+            assert_eq!(tree.nodes[left_idx].key, vec![0, 2, 0, 0, 0, 0, 0]);
+            assert_eq!(tree.nodes[right_idx].key, vec![0, 0, 1, 1, 0, 0, 0])
+        }
+
+        {
+            // Checking RIGHT Subtree
+            let root_idx = tree.nodes[root_idx].children.1.unwrap();
+            assert_eq!(tree.nodes[root_idx].key, vec![0, 1, 1, 1, 0, 0, 0]);
+            let left_idx = tree.nodes[root_idx].children.0.unwrap();
+            let right_idx = tree.nodes[root_idx].children.1.unwrap();
+            assert_eq!(tree.nodes[left_idx].key, vec![0, 0, 1, 1, 0, 0, 0]);
+            assert_eq!(tree.nodes[right_idx].key, vec![0, 1, 0, 0, 0, 0, 0])
         }
     }
 }
