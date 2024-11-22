@@ -34,8 +34,8 @@ fn print_test_result(b: bool, i: usize) {
 /// Returns the pair (input,output) of `j`-th test files
 /// for the `i`-th problem
 fn get_files(i: usize, j: usize) -> (File, File) {
-    let base_in = "./tests/problem_*/input/input$.txt";
-    let base_out = "./tests/problem_*/output/output$.txt";
+    let base_in = "./Testset_handson2_p*/input$.txt";
+    let base_out = "./Testset_handson2_p*/output$.txt";
     let input = base_in
         .replace("*", &i.to_string())
         .replace("$", &j.to_string());
