@@ -3,7 +3,8 @@ use handson2_segment_tree::MaxSTree;
 use std::fs::File;
 use std::io::{self, BufRead};
 
-/// This program implements the second HandsOn from the "Competitive Programming and Contests"
+/// This program checks the correctness of the implemented solutions
+/// for the second HandsOn from the "Competitive Programming and Contests"
 /// 2024/25 course held at the University of Pisa.
 /// This code tests the solutions to the two assigned problems, `Min and Max` and `IsThere`,
 /// using the test sets provided.

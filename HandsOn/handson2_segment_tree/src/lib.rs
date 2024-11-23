@@ -1,25 +1,29 @@
-/// This code is an implementation of the Segment Tree providing a solution
-/// to the two problems given for the 2nd HandsOn of Competitive Programming and Contest
-/// at the University of Pisa (24/25)
+/// This code implements the solutions for the second HandsOn of
+/// the course "Competitive Programming and Contest" 2024/25
+/// course held at at the University of Pisa.
 ///
-/// [FIRST-PROBLEM]
-/// You are given an array A[1,n] of n positive integers, each integer is at most n.
-/// You have to build a data structure to answer two different types of queries:
+/// [PROBLEM #1 - Min and Max]
+/// Given an array A[1,n] of n positive integers s.t each each x in A = O(n),
+/// build a data structure that answers in O(log(n)) time the following queries:
 /// - Update(i,j,T): ∀k in [1,n].A[k] = min(A[k], T)
-/// - Max(i, j) that returns the largest value in A[i...j]
+/// - Max(i, j) : returns the largest value in A[i...j]
 ///
-/// [SECOND-PROBLEM]
-/// You are given a set of n segments S = {s1; ...; sn} s.t each si(li, ri) with
-/// 0 <=li <= ri <= n-1.
-/// Develop a data structure to answer the query IsThere(i,j,k) which returns 1 if there
-/// exists a position p in [i,j] s.t. exactly k segments contsin position p, 0 otherwise.
-/// The data structure must solve a IsThere query in O(log(n))
+/// [PROBLEM #2 - Is There]
+/// Given a set of n segments S = {s1; ...; sn} s.t each si = (li, ri)
+/// where 0 <=li <= ri <= n-1, build a data structure to answer in O(log(n))
+/// time the following query:
+/// IsThere(i,j,k) = { 1     if ∃p in [i,j] s.t exactly k segments }
+///                                             overlap position p }
+///                  { 0     otherwise                             }
 use std::{cmp, collections::HashMap};
 
-/// Represents a Node in a Segment Tree.
-/// The main difference compared to a Node in a Binary Tree is that
-/// we also specify the range of the Node, that is for which elements
-/// the value of the key is indexed
+/// Represents a node in the Max Segment Tree.
+/// Each node includes:
+/// - `key`: The maximum value among its children's keys.
+///          If the node is the `i`-th leaf, then `key = a[i]`.
+/// - `children`: A pair of indexes representing the node's children.
+///               If the node is a leaf, `children = (None, None)`.
+/// - `range`: The range of indices in the array `a` indexed by the node.
 struct MaxNode {
     key: usize,
     children: (Option<usize>, Option<usize>),
@@ -27,7 +31,8 @@ struct MaxNode {
 }
 
 impl MaxNode {
-    /// Base constructor
+    /// A base constructor requiring to pass every
+    /// value of the node manually.
     fn new(key: usize, children: (Option<usize>, Option<usize>), range: (usize, usize)) -> Self {
         Self {
             key,
@@ -37,13 +42,17 @@ impl MaxNode {
     }
 }
 
+/// Represents a Maximum Segment Tree.
+/// ∀node in MaxSTree.node.key = max value in A[node.range].
+/// The tree includes:
+/// - `nodes`: A vector containing all the nodes of the tree.
+/// - `root`: The index of the root node in the `nodes` vector.
 pub struct MaxSTree {
     nodes: Vec<MaxNode>,
     root: Option<usize>,
 }
 
 impl MaxSTree {
-    /// Base Constructor
     /// Initializes an empty tree instance.
     fn empty_new() -> Self {
         Self {
@@ -52,12 +61,12 @@ impl MaxSTree {
         }
     }
 
-    /// Array Constructor
-    /// Initializes a Max Segment Tree indexing the elements in `a`.
-    /// # IMPORTANT
-    /// Elements in `a` are indexed from [1, n]
-    /// #Errors
-    /// If `a` is empty, then no tree will be constructed (`None` will be returned)
+    /// Base constructor which given a vector of n positive integers `a`
+    /// s.t. each ∀x in `a`. 0 < x <= n, constructs a Max Segment Tree
+    /// indexing the elements in `a`.
+    /// # Returns
+    /// If `a` is as requented a `Some(MaxSegTree)` instance, otherwise return
+    /// `None` indicating that no tree can be constructed.
     pub fn new(a: &Vec<usize>) -> Option<Self> {
         // Check if `a` is empty
         if a.is_empty() {
@@ -70,12 +79,10 @@ impl MaxSTree {
         Some(tree)
     }
 
-    /// Helper fn which recursively construct a Max Segment Tree.
-    /// For each node `n[i,j]`, `n[i,j].key` = maximum value among
-    /// the elements in the range `[i, j]`.
+    /// Helper fn which recursively construct a Max Segment Tree over
+    /// a passed vector of positive integers `a`.
     /// # Returns
     /// The index of the created node in the Max Segment Tree.
-    /// The first call will return the index of the root.
     fn h_build(&mut self, a: &Vec<usize>, range: (usize, usize)) -> usize {
         if range.0 == range.1 {
             // BASE CASE: LEAF
@@ -94,8 +101,23 @@ impl MaxSTree {
         self.nodes.len() - 1
     }
 
+    /// Given a `q_range` = (l, r) returns `x` s.t. x = max value
+    /// indexed by the tree in [l,r].
+    pub fn max(&self, q_range: (usize, usize)) -> Option<usize> {
+        let q_range = (q_range.0 - 1, q_range.1 - 1);
+        let idx = self.root.unwrap();
+
+        // Check if the range is indexed by the tree
+        if !(q_range.0 >= self.nodes[idx].range.0 && q_range.1 <= self.nodes[idx].range.1) {
+            eprintln!("Range not indexed by the tree!");
+            return None;
+        }
+        self.h_max(q_range, idx)
+    }
+
     /// A helper recursive fn that returns the maximum value within the range
-    /// `m_range=[l, r]` as indexed by the tree.
+    /// `q_range` = (l, r) for the tree whose root is at index `idx`. If the
+    /// `q_range` is out of range it returns `None`.
     fn h_max(&self, q_range: (usize, usize), idx: usize) -> Option<usize> {
         let c_range = self.nodes[idx].range;
 
@@ -134,21 +156,9 @@ impl MaxSTree {
         }
     }
 
-    /// Returns the maximum value within `query_range=[l, r]` as indexed by the tree.
-    pub fn max(&self, q_range: (usize, usize)) -> Option<usize> {
-        let q_range = (q_range.0 - 1, q_range.1 - 1);
-        let idx = self.root.unwrap();
-
-        // Check if the range is indexed by the tree
-        if !(q_range.0 >= self.nodes[idx].range.0 && q_range.1 <= self.nodes[idx].range.1) {
-            eprintln!("Range not indexed by the tree!");
-            return None;
-        }
-        self.h_max(q_range, idx)
-    }
-
-    /// Given `u_range=[l,r]` and a value `t` then:
-    /// ∀k in [l,r].A[k] = min(A[k], t)
+    /// Given `u_range` = (l, r) and a value `t` then if (l,r)
+    /// are within the range of the tree, updates it s.t.
+    /// ∀k in [l,r].A[k] = min(A[k], t).
     pub fn update(&mut self, u_range: (usize, usize), t: usize) {
         // TODO Check if t = O(n)
         let u_range = (u_range.0 - 1, u_range.1 - 1);
@@ -156,8 +166,10 @@ impl MaxSTree {
         self.h_update(u_range, t, idx);
     }
 
-    /// Helper recursive fn s.t given `u_range=[l,r]` and a value `t` then:
-    /// ∀k in [l,r].A[k] = min(A[k], t)
+    /// Helper recursive fn s.t given `u_range` = (l,r) and a value `t`,
+    /// then if (l,r) are within the range of the tree rooted at `idx`, updates
+    /// the tree s.t.
+    /// ∀k in [l,r].A[k] = min(A[k], t).
     fn h_update(&mut self, u_range: (usize, usize), t: usize, idx: usize) -> usize {
         let c_range = self.nodes[idx].range;
 
@@ -189,6 +201,14 @@ impl MaxSTree {
     }
 }
 
+/// Represents a node in the Frequency Segment Tree.
+/// Each node includes:
+/// - `key`: A hash map with pairs `<k, p>` for the range covered by the node, where:
+///   * `k`: The number of overlapping segments at a position (`0 <= k <= n`).
+///   * `p`: # positions within the node's range where exactly `k` segments overlap.
+/// - `children`: A pair of indexes representing the node's children.
+///               If the node is a leaf, `children = (None, None)`.
+/// - `range`: The range of position within the set of segments indexed by the node.
 struct FreqNode {
     key: HashMap<usize, usize>,
     children: (Option<usize>, Option<usize>),
@@ -196,8 +216,12 @@ struct FreqNode {
 }
 
 impl FreqNode {
-    /// Base constructor
-    /// TODO add better description
+    /// For a given array `a'[0, n - 1], where each element
+    /// `a[i]`= # of segments overlapping at position `i`,
+    /// and a specified position `pos`:
+    /// construct a leaf node s.t.:
+    /// - `leaf.range = (pos, pos)`.
+    /// - `leaf.key` = an hash map containing only the pair `<a[pos], 1>`.
     fn new_leaf(a: &Vec<isize>, pos: usize) -> Self {
         let mut map = HashMap::new();
         let idx = usize::try_from(a[pos]).unwrap();
@@ -209,13 +233,15 @@ impl FreqNode {
         }
     }
 
-    /// TODO add better description
+    /// Constructs an internal node in the Frequency Segment Tree.
+    /// The node's `key` is a hash map created by merging the `key` maps of its child nodes,
+    /// which are specified by the `indexes` within the `nodes` array.
+    /// The resulting node represents the segments indexed within the specified `range`.
     fn new_node(
         nodes: (&FreqNode, &FreqNode),
         indexes: (usize, usize),
         range: (usize, usize),
     ) -> Self {
-        // ∀i in [0, n-1].temp[i] = a[i] + b[i]
         let (map_l, map_r) = (&nodes.0.key, &nodes.1.key);
         let mut map: HashMap<usize, usize> =
             HashMap::with_capacity(cmp::max(map_l.len(), map_r.len()));
@@ -242,9 +268,9 @@ impl FreqNode {
         }
     }
 
-    /// A node as as `key` an HashTable of pairs <`s`,`p`> s.t.
-    /// - s = [0, #segments]
-    /// - p = # of positions having s segments
+    /// Checks if the node contains in its hash map a
+    /// pair <k, p> s.t. p >= 1. If so returns 1, otherwise 0.
+    /// Formally:
     /// key(k) >= 1 -> 1, 0
     fn exists_positions(&self, k: usize) -> usize {
         if self.key.contains_key(&k) && *self.key.get(&k).unwrap() >= 1 {
@@ -254,13 +280,20 @@ impl FreqNode {
     }
 }
 
+/// Represents a Frequency Segment Tree.
+/// ∀node in FreqSTree:node.key = map containing all the pairs <k,p>
+/// for the range indexed by the node where:
+///  * `k`: The number of overlapping segments at a position (`0 <= k <= n`).
+///  * `p`: # positions within the node's range where exactly `k` segments overlap.
+/// Its implementation uses:
+/// - `nodes`: A vector containing all the nodes of the tree.
+/// - `root`: The index of the root node in the `nodes` vector.
 pub struct FreqSTree {
     nodes: Vec<FreqNode>,
     root: Option<usize>,
 }
 
 impl FreqSTree {
-    /// Base Constructor
     /// Initializes an empty tree instance.
     fn empty_new() -> Self {
         Self {
@@ -269,10 +302,11 @@ impl FreqSTree {
         }
     }
 
-    /// Array Constructor
-    /// Initializes a Frequency Segment Tree indexing the elements in `s`.
-    /// # IMPORTANT
-    /// elements in s are from [0, n-1]
+    /// Given a set of n segments `s` = {s1; ...; sn} s.t each si = (li, ri)
+    /// where 0 <=li <= ri <= n-1, initialize a Frequency Segment Tree
+    /// indexing all elements in `s`.
+    /// If `s` is  as requented returns a `Some(FreqSegTree)` instance, otherwise return
+    /// `None` indicating that no tree can be constructed.
     pub fn new(s: Vec<(usize, usize)>) -> Option<Self> {
         // Check that s is not empty
         if s.is_empty() {
@@ -286,11 +320,9 @@ impl FreqSTree {
         Some(tree)
     }
 
-    /// Given a set of segments `s_set` = {s1; ...; sn}
-    /// s.t each si = (l, r) where 0 <= l <= r <= n-1.
-    /// The fn constructs an array `a[0, n-1]` s.t. each
-    /// `a[i]` = # segments overlapping in position i
-    /// # Assumptions
+    /// Given a set of segments `s_set` = {s1; ...; sn} s.t each
+    ///  si = (l, r) where 0 <= l <= r <= n-1, constructs an array
+    /// `a[0, n-1]` s.t. each `a[i]` = # segments overlapping in position i
     fn build_seg_array(s_set: Vec<(usize, usize)>) -> Vec<isize> {
         let n = s_set.len();
 
@@ -310,10 +342,9 @@ impl FreqSTree {
             .collect()
     }
 
-    /// Constructs a Frequency Segment Tree from a given set of segments `s_set = {s1, ..., sn}`,
-    /// where each segment `si` is defined as `(l, r)` with `0 <= l <= r <= n - 1`.
-    /// Each node `n[i, j]` contains a table where each entry `e(key)` represents:
-    /// `e(key) =` The number of positions within the range `[i, j]` that have exactly `key` overlapping segments.
+    /// Constructs a Frequency Segment Tree indexing segments in [`l`,`r`]
+    /// from a given array of positions `a` s.t. each `a[i]` = # segments
+    /// overlapping in position i.
     fn h_build(&mut self, a: &Vec<isize>, l: usize, r: usize) -> usize {
         // Base Case - Leaf
         if l == r {
@@ -334,9 +365,25 @@ impl FreqSTree {
         self.nodes.len() - 1
     }
 
-    /// Given a `range=[i,j]` and a value `k` returns 1 if there exists a position `p` in `[i,j]`
-    /// s.t. the #segments overlapping in p = k, 0 otherwise. Note that returning `p` is not
-    /// requested, only to guarantee that is exists or not.
+    /// Given `q_range` = (i,j) and a value `k` returns :
+    /// - 1: if there exists a position p in [i,j] in the tree
+    ///      s.t. exactly `k` segments overlap position p
+    /// - 0: otherwise
+    pub fn is_there(&self, q_range: (usize, usize), k: usize) -> usize {
+        let idx = self.root.unwrap();
+
+        // Check if the range is indexed by the tree
+        if !(q_range.0 >= self.nodes[idx].range.0 && q_range.1 <= self.nodes[idx].range.1) {
+            eprintln!("Range not indexed by the tree!");
+            return 0;
+        }
+        self.h_is_there(q_range, idx, k)
+    }
+
+    /// Given `q_range` = (i,j) and a value `k` returns :
+    /// - 1: if there exists a position p in [i,j] in the subtree indexed in `idx`
+    ///      s.t. exactly `k` segments overlap position p
+    /// - 0: otherwise
     fn h_is_there(&self, q_range: (usize, usize), idx: usize, k: usize) -> usize {
         let c_range = self.nodes[idx].range;
 
@@ -377,23 +424,12 @@ impl FreqSTree {
             sol_r
         }
     }
-
-    /// TODO Add better description
-    pub fn is_there(&self, q_range: (usize, usize), k: usize) -> usize {
-        let idx = self.root.unwrap();
-
-        // Check if the range is indexed by the tree
-        if !(q_range.0 >= self.nodes[idx].range.0 && q_range.1 <= self.nodes[idx].range.1) {
-            eprintln!("Range not indexed by the tree!");
-            return 0;
-        }
-        self.h_is_there(q_range, idx, k)
-    }
 }
 
 /// A set of tests for constructors of `FreqNode`
-/// For each test we provide the array `A[1,n]` of segments overlapping position
-/// and construct a leaf or internal node according to `A`
+/// For each test we provide the vector `a[0,n - 1]`
+/// of segments overlapping position and construct a
+/// leaf or internal node according to `a`.
 #[cfg(test)]
 mod freq_node_tests {
     use crate::FreqNode;
@@ -477,7 +513,7 @@ mod freq_node_tests {
 /// For each test we construct a Frequency Segment Tree over a set of
 /// segments `S` and test various queries over it.
 /// For each test we provide a visual representation of the constructed
-/// tree, specifying the queries proposed and the answers they should get
+/// tree, specifying the queries proposed and the answers they should get.
 #[cfg(test)]
 mod is_there_tests {
     use crate::FreqSTree;
@@ -512,8 +548,8 @@ mod is_there_tests {
     }
 }
 
-/// A set of tests for constructing Max Segment Tree.
-/// Each test construct a Max Segment Tree over 'a'.
+/// A set of tests for constructing Frequency Segment Tree.
+/// Each test construct a FreqSegTree over 'a'.
 /// Then visits the tree and checks if all nodes have
 /// the same value as the correct tree.
 /// For each test a visual representation of the tree is provided
