@@ -3,6 +3,10 @@ use handson2_segment_tree::MaxSTree;
 use std::fs::File;
 use std::io::{self, BufRead};
 
+/// This program implements the second HandsOn from the "Competitive Programming and Contests"
+/// 2024/25 course held at the University of Pisa.
+/// This code tests the solutions to the two assigned problems, `Min and Max` and `IsThere`,
+/// using the test sets provided.
 fn main() {
     let tests = vec![11, 8];
     for i in 1..=2 {
@@ -18,7 +22,8 @@ fn main() {
     }
 }
 
-/// Add better description
+/// Prints the message "Test i - Passed" or "Test i - Failed"
+/// based on the outcome of the `i`-th test.
 fn print_test_result(b: bool, i: usize) {
     let base_success = "Test $ - Passed";
     let base_fail = "Test $ - Failed";
@@ -31,8 +36,8 @@ fn print_test_result(b: bool, i: usize) {
     }
 }
 
-/// Returns the pair (input,output) of `j`-th test files
-/// for the `i`-th problem
+/// Returns the test pair (input,output) for the
+/// `j`-th test file of the `i`-th problem
 fn get_files(i: usize, j: usize) -> (File, File) {
     let base_in = "./Testset_handson2_p*/input$.txt";
     let base_out = "./Testset_handson2_p*/output$.txt";
@@ -47,10 +52,10 @@ fn get_files(i: usize, j: usize) -> (File, File) {
     (input, output)
 }
 
-/// Execute the is_there problem
-/// for a given pair `(input, output)` test files
-/// Returns true if the produced outputs follows
-/// the test `output`, false otherwise
+/// Executes the `Is There` problem for a given pair
+/// of test files `(input, output)`.
+/// Returns `true` if the generated output matches the
+/// expected `output`, `false` otherwise.
 fn is_there(input: File, output: File) -> bool {
     // Creating the iterator for scanning the file
     let input = io::BufReader::new(input);
@@ -95,10 +100,10 @@ fn is_there(input: File, output: File) -> bool {
     check_outputs(output, res)
 }
 
-/// Execute the min_max problem
-/// for a given pair `(input, output)` test files
-/// Returns true if the produced outputs follows
-/// the test `output`, false otherwise
+/// Executes the `Min and Max` problem for a given pair
+/// of test files `(input, output)`.
+/// Returns `true` if the generated output matches the
+/// expected `output`, `false` otherwise.
 fn min_max(input: File, output: File) -> bool {
     // Creating the iterator for scanning the file
     let input = io::BufReader::new(input);
@@ -140,8 +145,8 @@ fn min_max(input: File, output: File) -> bool {
     check_outputs(output, res)
 }
 
-/// Given a set of outputs `res` checks if it satisfies
-/// a given `output` test file
+/// Given a set of outputs `res` checks if the results
+/// match the ones of the associated `output` test file.
 fn check_outputs(output: File, res: Vec<usize>) -> bool {
     // Checking that the results are equal to the ones in output
     let output = io::BufReader::new(output);
@@ -157,13 +162,14 @@ fn check_outputs(output: File, res: Vec<usize>) -> bool {
 }
 
 /// Gets an input line from standard input
-/// and returns a `Vec<usize>` of `n` elems
+/// and parse it into a vector of `n` positive ints.
 /// If n = None it means we are getting a query for
-/// min_max. After getting the input it will read
+/// the `Min and Max` problem.
+/// In the case after getting the input it will read
 /// the first element in the parsed vector and
-/// if vec[0] = 0 -> Update Query vec.len() == 4
-/// if vec[0] = 1 -> Update Query vec.len() == 3
-/// otherwise return None
+/// if vec[0] = 0 -> `update` query then vec.len() == 4
+/// if vec[0] = 1 -> `max` query then vec.len() == 3 .
+/// For any kind of error while parsing returns `None`
 fn get_inputs(n: Option<usize>, str: String) -> Option<Vec<usize>> {
     let inputs: Vec<&str> = str.trim().split_whitespace().collect();
 
