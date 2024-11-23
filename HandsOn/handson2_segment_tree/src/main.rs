@@ -8,6 +8,8 @@ use std::io::{self, BufRead};
 /// 2024/25 course held at the University of Pisa.
 /// This code tests the solutions to the two assigned problems, `Min and Max` and `IsThere`,
 /// using the test sets provided.
+/// The program assumes that the tests are stored in the folders "Testset_handson2_p1"
+/// and "Testset_handson2_p2" at the root of the cargo project.
 fn main() {
     let tests = vec![11, 8];
     for i in 1..=2 {
