@@ -11,7 +11,7 @@ use std::io::{self, BufRead};
 /// The program assumes that the tests are stored in the folders "Testset_handson2_p1"
 /// and "Testset_handson2_p2" at the root of the cargo project.
 fn main() {
-    let tests = vec![11, 8];
+    let tests = vec![11, 8]; //TODO put first element to 11
     for i in 1..=2 {
         println!("{}", "Testing Problem #$".replace("$", &i.to_string()));
         for j in 0..tests[i - 1] {
