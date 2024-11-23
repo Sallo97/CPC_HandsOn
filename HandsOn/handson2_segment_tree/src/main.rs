@@ -163,7 +163,7 @@ fn check_outputs(output: File, res: Vec<usize>) -> bool {
 
 /// Gets an input line from standard input
 /// and parse it into a vector of `n` positive ints.
-/// If n = None it means we are getting a query for
+/// If n = `None` it means we are getting a query for
 /// the `Min and Max` problem.
 /// In the case after getting the input it will read
 /// the first element in the parsed vector and
