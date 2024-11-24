@@ -24,6 +24,8 @@ use std::{cmp, collections::HashMap};
 /// - `children`: A pair of indexes representing the node's children.
 ///               If the node is a leaf, `children = (None, None)`.
 /// - `range`: The range of indices in the array `a` indexed by the node.
+/// - `pending`: boolean which states if the node contains a pending update
+///              to pass to its children.
 struct MaxNode {
     key: usize,
     children: (Option<usize>, Option<usize>),
@@ -43,7 +45,11 @@ impl MaxNode {
         }
     }
 
-    /// TODO ADD BETTER DESCRIPTION
+    /// Updates the current node's value by setting `node.key` to `min(new_val, node.key)`,
+    /// instead of recursively updating the entire subtree rooted at this node.
+    /// Marks the node as `pending`, indicating that its children need to be updated
+    /// with the node's current value during future operations. For leaf nodes,
+    /// no pending update is set as they have no children.
     fn lazy_update(&mut self, new_val: usize) {
         // If I'm not a leaf I have a pending update in my hands
         let (l, r) = self.range;
@@ -96,15 +102,15 @@ impl MaxSTree {
     /// # Returns
     /// The index of the created node in the Max Segment Tree.
     fn h_build(&mut self, a: &Vec<usize>, range: (usize, usize)) -> usize {
-        if range.0 == range.1 {
+        let (l, r) = (range.0, range.1);
+        if l == r {
             // BASE CASE: LEAF
-            self.nodes
-                .push(MaxNode::new(a[range.0], (None, None), (range.0, range.0)));
+            self.nodes.push(MaxNode::new(a[l], (None, None), (l, l)));
         } else {
             // INDUCTIVE CASE: Internal Node
-            let m = (range.0 + range.1) / 2;
-            let lchd = self.h_build(&a, (range.0, m));
-            let rchd = self.h_build(&a, (m + 1, range.1));
+            let m = (l + r) / 2;
+            let lchd = self.h_build(&a, (l, m));
+            let rchd = self.h_build(&a, (m + 1, r));
             let val = cmp::max(self.nodes[lchd].key, self.nodes[rchd].key);
 
             self.nodes
@@ -113,7 +119,8 @@ impl MaxSTree {
         self.nodes.len() - 1
     }
 
-    /// TODO add better description
+    /// If the node at index `idx` has a pending update, it
+    /// propagates it lazily updating its children.
     fn propagate(&mut self, idx: usize) {
         if self.nodes[idx].pending {
             let key = self.nodes[idx].key;
@@ -143,36 +150,36 @@ impl MaxSTree {
     /// `q_range` = (l, r) for the tree whose root is at index `idx`. If the
     /// `q_range` is out of range it returns `None`.
     fn h_max(&mut self, q_range: (usize, usize), idx: usize) -> Option<usize> {
-        let c_range = self.nodes[idx].range;
-
+        let (c_l, c_r) = self.nodes[idx].range;
+        let (q_l, q_r) = q_range;
         // If current node has a pending update, propagate it
         self.propagate(idx);
         // Base Case #1 - No Overlap
-        if q_range.1 < c_range.0 || c_range.1 < q_range.0 {
+        if q_r < c_l || c_r < q_l {
             None
         }
         // Base Case #2 - Total Overlap
-        else if q_range.0 <= c_range.0 && c_range.1 <= q_range.1 {
+        else if q_l <= c_l && c_r <= q_r {
             Some(self.nodes[idx].key)
         }
         // Iterative Case - Partial Overlap
         else {
-            let m = (c_range.0 + c_range.1) / 2;
+            let m = (c_l + c_r) / 2;
 
             // Part of the solution in the LEFT SIDE
-            let sol_l = if q_range.0 <= m {
+            let sol_l = if q_l <= m {
                 let idx = self.nodes[idx].children.0.unwrap();
-                let r = cmp::min(q_range.1, m);
-                self.h_max((q_range.0, r), idx)
+                let r = cmp::min(q_r, m);
+                self.h_max((q_l, r), idx)
             } else {
                 None
             };
 
             // Part of the solution in the RIGHT SIDE
-            let sol_r = if q_range.1 > m {
+            let sol_r = if q_r > m {
                 let idx = self.nodes[idx].children.1.unwrap();
-                let l = cmp::max(q_range.0, m);
-                self.h_max((l, q_range.1), idx)
+                let l = cmp::max(q_l, m);
+                self.h_max((l, q_r), idx)
             } else {
                 None
             };
@@ -196,17 +203,19 @@ impl MaxSTree {
     /// the tree s.t.
     /// ∀k in [l,r].A[k] = min(A[k], t).
     fn h_update(&mut self, u_range: (usize, usize), t: usize, idx: usize) -> usize {
-        let c_range = self.nodes[idx].range;
+        let (c_l, c_r) = self.nodes[idx].range;
+        let (q_l, q_r) = (u_range.0, u_range.1);
 
-        // If current node has a pending update, propagate it
+        // If current node has a pending update, propagate
+        // it to its children
         self.propagate(idx);
 
         // Base Case #1 No Overlap
-        if u_range.1 < c_range.0 || c_range.1 < u_range.0 {
+        if q_r < c_l || c_r < q_l {
             self.nodes[idx].key
         }
         // Base Case #2 Total Overlap
-        else if u_range.0 <= c_range.0 && c_range.1 <= u_range.1 {
+        else if q_l <= c_l && c_r <= q_r {
             let new_val = cmp::min(t, self.nodes[idx].key);
             self.nodes[idx].lazy_update(new_val);
             self.nodes[idx].key
