@@ -28,6 +28,7 @@ struct MaxNode {
     key: usize,
     children: (Option<usize>, Option<usize>),
     range: (usize, usize),
+    pending: bool,
 }
 
 impl MaxNode {
@@ -38,7 +39,18 @@ impl MaxNode {
             key,
             children,
             range,
+            pending: false,
         }
+    }
+
+    /// TODO ADD BETTER DESCRIPTION
+    fn lazy_update(&mut self, new_val: usize) {
+        // If I'm not a leaf I have a pending update in my hands
+        let (l, r) = self.range;
+        if l != r {
+            self.pending = true;
+        }
+        self.key = cmp::min(new_val, self.key);
     }
 }
 
@@ -101,9 +113,21 @@ impl MaxSTree {
         self.nodes.len() - 1
     }
 
+    /// TODO add better description
+    fn propagate(&mut self, idx: usize) {
+        if self.nodes[idx].pending {
+            let key = self.nodes[idx].key;
+            self.nodes[idx].pending = false;
+            let idx_l = self.nodes[idx].children.0.unwrap();
+            self.nodes[idx_l].lazy_update(key);
+            let idx_r = self.nodes[idx].children.1.unwrap();
+            self.nodes[idx_r].lazy_update(key);
+        }
+    }
+
     /// Given a `q_range` = (l, r) returns `x` s.t. x = max value
     /// indexed by the tree in [l,r].
-    pub fn max(&self, q_range: (usize, usize)) -> Option<usize> {
+    pub fn max(&mut self, q_range: (usize, usize)) -> Option<usize> {
         let q_range = (q_range.0 - 1, q_range.1 - 1);
         let idx = self.root.unwrap();
 
@@ -118,9 +142,11 @@ impl MaxSTree {
     /// A helper recursive fn that returns the maximum value within the range
     /// `q_range` = (l, r) for the tree whose root is at index `idx`. If the
     /// `q_range` is out of range it returns `None`.
-    fn h_max(&self, q_range: (usize, usize), idx: usize) -> Option<usize> {
+    fn h_max(&mut self, q_range: (usize, usize), idx: usize) -> Option<usize> {
         let c_range = self.nodes[idx].range;
 
+        // If current node has a pending update, propagate it
+        self.propagate(idx);
         // Base Case #1 - No Overlap
         if q_range.1 < c_range.0 || c_range.1 < q_range.0 {
             None
@@ -172,16 +198,20 @@ impl MaxSTree {
     fn h_update(&mut self, u_range: (usize, usize), t: usize, idx: usize) -> usize {
         let c_range = self.nodes[idx].range;
 
+        // If current node has a pending update, propagate it
+        self.propagate(idx);
+
         // Base Case #1 No Overlap
         if u_range.1 < c_range.0 || c_range.1 < u_range.0 {
             self.nodes[idx].key
         }
-        // Base Case #2 Leaf Overlap
-        else if c_range.0 == c_range.1 {
-            self.nodes[idx].key = cmp::min(t, self.nodes[idx].key);
+        // Base Case #2 Total Overlap
+        else if u_range.0 <= c_range.0 && c_range.1 <= u_range.1 {
+            let new_val = cmp::min(t, self.nodes[idx].key);
+            self.nodes[idx].lazy_update(new_val);
             self.nodes[idx].key
         }
-        // Iterative Case Segment Overlap
+        // Iterative Case Partial Overlap
         else {
             // Recurse on the LEFT SIDE
             let idx_l = self.nodes[idx].children.0.unwrap();
