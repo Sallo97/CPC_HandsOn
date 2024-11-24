@@ -192,19 +192,19 @@ impl MaxSTree {
     /// Given `u_range` = (l, r) and a value `t` then if (l,r)
     /// are within the range of the tree, updates it s.t.
     /// ∀k in [l,r].A[k] = min(A[k], t).
-    pub fn update(&mut self, u_range: (usize, usize), t: usize) {
-        let u_range = (u_range.0 - 1, u_range.1 - 1);
+    pub fn update(&mut self, q_range: (usize, usize), t: usize) {
+        let q_range = (q_range.0 - 1, q_range.1 - 1);
         let idx = self.root.unwrap();
-        self.h_update(u_range, t, idx);
+        self.h_update(q_range, t, idx);
     }
 
     /// Helper recursive fn s.t given `u_range` = (l,r) and a value `t`,
     /// then if (l,r) are within the range of the tree rooted at `idx`, updates
     /// the tree s.t.
     /// ∀k in [l,r].A[k] = min(A[k], t).
-    fn h_update(&mut self, u_range: (usize, usize), t: usize, idx: usize) -> usize {
+    fn h_update(&mut self, q_range: (usize, usize), t: usize, idx: usize) -> usize {
         let (c_l, c_r) = self.nodes[idx].range;
-        let (q_l, q_r) = (u_range.0, u_range.1);
+        let (q_l, q_r) = (q_range.0, q_range.1);
 
         // If current node has a pending update, propagate
         // it to its children
@@ -224,11 +224,11 @@ impl MaxSTree {
         else {
             // Recurse on the LEFT SIDE
             let idx_l = self.nodes[idx].children.0.unwrap();
-            let val_l = Some(self.h_update(u_range, t, idx_l));
+            let val_l = Some(self.h_update(q_range, t, idx_l));
 
             // Recurse on the RIGHT SIDE
             let idx_r = self.nodes[idx].children.1.unwrap();
-            let val_r = Some(self.h_update(u_range, t, idx_r));
+            let val_r = Some(self.h_update(q_range, t, idx_r));
 
             // Merge partial solutions
             if let Some(val) = cmp::max(val_l, val_r) {
