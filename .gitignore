@@ -1,5 +1,1 @@
-# Ignore all target folders in any subdirectory
-**/target/
-
-# Ignore .DS_Store files everywhere in the project
-**/.DS_Store
+./Assignements/ass_1_binary_tree/target/
