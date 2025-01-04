@@ -79,6 +79,43 @@ fn construct_prefix_sum(mtx: &CustomMatrix) -> CustomMatrix {
     sum_prefix
 }
 
+pub fn find_max_activities(it: &CustomMatrix) -> u32 {
+    // Construct prefix sum matrix
+    let sum = construct_prefix_sum(it);
+
+    // Construct solution matrix
+    let mut dp = CustomMatrix::new(it.rows, it.cols);
+    for i in 0..it.rows {
+        for j in 0..it.cols {
+            // max {left; right}
+            // left = T(i-1, j)
+            // right = max_(0<= z <= j) T(i-1, j - (z + 1)) + sum(i,z)
+            let left = if i.overflowing_sub(1).1 {
+                0
+            } else {
+                dp.get_value(&(i - 1), &j).clone()
+            };
+
+            // Find the maximum
+            let mut rigth = 0;
+            for z in 0..=j {
+                let days = z + 1;
+                let new_rigth = if i.overflowing_sub(1).1 || j.overflowing_sub(days).1 {
+                    sum.get_value(&i, &z).clone()
+                } else {
+                    sum.get_value(&i, &z).clone() + dp.get_value(&(i - 1), &(j - days)).clone()
+                };
+
+                rigth = cmp::max(rigth, new_rigth);
+            }
+
+            let val = cmp::max(left, rigth);
+            dp.set_value(&i, &j, val);
+        }
+    }
+    dp.get_value(&(it.rows - 1), &(it.cols - 1)).clone()
+}
+
 #[cfg(test)]
 mod prefix_sum_tests {
     use crate::{construct_prefix_sum, CustomMatrix};
@@ -142,4 +179,34 @@ mod prefix_sum_tests {
         assert_eq!(sum.get_value(&1, &1), &2);
         assert_eq!(sum.get_value(&1, &2), &2002);
     }
+}
+
+#[cfg(test)]
+mod find_max_activities_tests {
+    use crate::{find_max_activities, CustomMatrix};
+
+    #[test]
+    fn max_1() {
+        // Input mtx:
+        // 3 2 1
+        // 3 1 1
+        // Output sum prefix:
+        // 8
+
+        // Constructing input mtx
+        let mut mtx = CustomMatrix::new(2, 3);
+        mtx.set_value(&0, &0, 3);
+        mtx.set_value(&0, &1, 2);
+        mtx.set_value(&0, &2, 1);
+
+        mtx.set_value(&1, &0, 3);
+        mtx.set_value(&1, &1, 1);
+        mtx.set_value(&1, &2, 1);
+
+        // Testing result
+        assert_eq!(find_max_activities(&mtx), 8);
+    }
+
+    #[test]
+    fn max_2() {}
 }
