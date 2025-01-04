@@ -27,7 +27,7 @@ pub struct CustomMatrix {
 impl CustomMatrix {
     /// A Base constructor creating a matrix
     /// in which all values are set to 0
-    fn new(rows: usize, cols: usize) -> Self {
+    pub fn new(rows: usize, cols: usize) -> Self {
         let mut mtx = Self {
             rows,
             cols,
@@ -48,8 +48,8 @@ impl CustomMatrix {
 
     /// Returns the value at row `i` and col `j`
     /// if i < 0 or j < 0 returns 0
-    pub fn get_value(&self, i: &usize, j: &usize) -> &u32 {
-        self.data.get(self.get_index(&i, &j)).unwrap()
+    pub fn get_value(&self, i: &usize, j: &usize) -> u32 {
+        self.data.get(self.get_index(&i, &j)).unwrap().clone()
     }
 
     /// Set the value at row `i` and col `j` equal to
@@ -57,6 +57,24 @@ impl CustomMatrix {
     pub fn set_value(&mut self, i: &usize, j: &usize, val: u32) {
         let idx = self.get_index(&i, &j);
         self.data[idx] = val;
+    }
+
+    /// Prints the whole matrix
+    pub fn print_matrix(&self) {
+        for row in 0..self.rows {
+            for col in 0..self.cols {
+                print!("{} ", self.get_value(&row, &col));
+            }
+            println!();
+        }
+    }
+
+    /// given the vector `nums` and an index `row_idx`,
+    /// fills the i-th row of the matrix with the elems in `nums`
+    pub fn add_row(&mut self, row_idx: usize, nums: &Vec<u32>) {
+        for j in 0..nums.len() {
+            self.set_value(&row_idx, &j, nums[j]);
+        }
     }
 }
 
@@ -88,29 +106,26 @@ pub fn find_max_activities(it: &CustomMatrix) -> u32 {
     for i in 0..it.rows {
         for j in 0..it.cols {
             // max {left; right}
-            // left = T(i-1, j)
-            // right = max_(0<= z <= j) T(i-1, j - (z + 1)) + sum(i,z)
-            let left = if i.overflowing_sub(1).1 {
-                0
-            } else {
-                dp.get_value(&(i - 1), &j).clone()
-            };
+            // left = dp(i-1, j)
+            // right = max_(0<= z <= j) dp(i-1, j - (z + 1)) + sum(i,z)
+            let left = if i > 0 { dp.get_value(&(i - 1), &j) } else { 0 };
 
             // Find the maximum
-            let mut rigth = 0;
-            for z in 0..=j {
-                let days = z + 1;
-                let new_rigth = if i.overflowing_sub(1).1 || j.overflowing_sub(days).1 {
-                    sum.get_value(&i, &z).clone()
-                } else {
-                    sum.get_value(&i, &z).clone() + dp.get_value(&(i - 1), &(j - days)).clone()
-                };
+            let rigth = (0..=j)
+                .map(|z| {
+                    let days = z + 1;
+                    let sum_values = sum.get_value(&i, &z);
+                    if i > 0 && j >= days {
+                        sum_values + dp.get_value(&(i - 1), &(j - days))
+                    } else {
+                        sum_values
+                    }
+                })
+                .max()
+                .unwrap_or(0);
 
-                rigth = cmp::max(rigth, new_rigth);
-            }
-
-            let val = cmp::max(left, rigth);
-            dp.set_value(&i, &j, val);
+            // Store the final value
+            dp.set_value(&i, &j, cmp::max(left, rigth));
         }
     }
     dp.get_value(&(it.rows - 1), &(it.cols - 1)).clone()
@@ -141,13 +156,13 @@ mod prefix_sum_tests {
 
         // Testing result
         let sum = construct_prefix_sum(&mtx);
-        assert_eq!(sum.get_value(&0, &0), &3);
-        assert_eq!(sum.get_value(&0, &1), &5);
-        assert_eq!(sum.get_value(&0, &2), &6);
+        assert_eq!(sum.get_value(&0, &0), 3);
+        assert_eq!(sum.get_value(&0, &1), 5);
+        assert_eq!(sum.get_value(&0, &2), 6);
 
-        assert_eq!(sum.get_value(&1, &0), &3);
-        assert_eq!(sum.get_value(&1, &1), &4);
-        assert_eq!(sum.get_value(&1, &2), &5);
+        assert_eq!(sum.get_value(&1, &0), 3);
+        assert_eq!(sum.get_value(&1, &1), 4);
+        assert_eq!(sum.get_value(&1, &2), 5);
     }
 
     #[test]
@@ -171,13 +186,13 @@ mod prefix_sum_tests {
 
         // Testing result
         let sum = construct_prefix_sum(&mtx);
-        assert_eq!(sum.get_value(&0, &0), &100);
-        assert_eq!(sum.get_value(&0, &1), &200);
-        assert_eq!(sum.get_value(&0, &2), &201);
+        assert_eq!(sum.get_value(&0, &0), 100);
+        assert_eq!(sum.get_value(&0, &1), 200);
+        assert_eq!(sum.get_value(&0, &2), 201);
 
-        assert_eq!(sum.get_value(&1, &0), &1);
-        assert_eq!(sum.get_value(&1, &1), &2);
-        assert_eq!(sum.get_value(&1, &2), &2002);
+        assert_eq!(sum.get_value(&1, &0), 1);
+        assert_eq!(sum.get_value(&1, &1), 2);
+        assert_eq!(sum.get_value(&1, &2), 2002);
     }
 }
 
@@ -190,7 +205,7 @@ mod find_max_activities_tests {
         // Input mtx:
         // 3 2 1
         // 3 1 1
-        // Output sum prefix:
+        // Output:
         // 8
 
         // Constructing input mtx
@@ -208,5 +223,24 @@ mod find_max_activities_tests {
     }
 
     #[test]
-    fn max_2() {}
+    fn max_2() {
+        // Input mtx:
+        // 100 100 1
+        // 1   1   2000
+        // Output:
+        // 2002
+
+        // Constructing input mtx
+        let mut mtx = CustomMatrix::new(2, 3);
+        mtx.set_value(&0, &0, 100);
+        mtx.set_value(&0, &1, 100);
+        mtx.set_value(&0, &2, 1);
+
+        mtx.set_value(&1, &0, 1);
+        mtx.set_value(&1, &1, 1);
+        mtx.set_value(&1, &2, 2000);
+
+        // Testing result
+        assert_eq!(find_max_activities(&mtx), 2002);
+    }
 }
