@@ -1,5 +1,4 @@
 # Ignore all .DS_Store files throughout the project
 **/.DS_Store
 target/
-**/target/
-**/target/**
+**/target/*
