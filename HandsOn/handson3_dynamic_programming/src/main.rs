@@ -12,7 +12,7 @@ use std::usize;
 /// The program assumes that the tests are stored in the folders "Testset_handson3_p1"
 /// and "Testset_handson3_p2" at the root of the cargo project.
 fn main() {
-    let tests = vec![4, 0];
+    let tests = vec![5, 0];
     for i in 1..=2 {
         println!("{}", "Testing Problem #$".replace("$", &i.to_string()));
         for j in 0..tests[i - 1] {
@@ -70,11 +70,14 @@ fn holiday_planning(input: File, output: File) -> bool {
     let my_res = find_max_activities(&itinerary);
 
     // Getting the expected result from output
-    let mut output = io::BufReader::new(output);
-    let mut exp_res = String::new();
-    output.read_line(&mut exp_res).ok();
-    let exp_res: u32 = exp_res.trim().parse().unwrap();
-
+    let exp_res: u32 = io::BufReader::new(output)
+        .lines()
+        .next()
+        .unwrap()
+        .unwrap()
+        .trim()
+        .parse()
+        .unwrap();
     exp_res == my_res
 }
 
