@@ -1,4 +1,4 @@
-use handson3_dynamic_programming::ItineraryMatrix;
+use handson3_dynamic_programming::{ItineraryMatrix, TopicList};
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::usize;
@@ -6,27 +6,74 @@ use std::usize;
 /// This program checks the correctness of the implemented solutions
 /// for the second HandsOn from the "Competitive Programming and Contests"
 /// 2024/25 course held at the University of Pisa.
-/// This code tests the solutions to the two assigned problems, `Holiday Planning` and `???`,
+/// This code tests the solutions to the two assigned problems, `Holiday Planning` and `Design a course`,
 /// using the test sets provided.
 /// The program assumes that the tests are stored in the folders "Testset_handson3_p1"
 /// and "Testset_handson3_p2" at the root of the cargo project.
 fn main() {
-    let tests = vec![5, 0];
+    let tests = vec![5, 11];
     for i in 1..=2 {
         println!("{}", "Testing Problem #$".replace("$", &i.to_string()));
         for j in 0..tests[i - 1] {
             let files = get_files(i, j);
             let res = match i {
                 1 => holiday_planning(files.0, files.1),
-                _ => todo(),
+                _ => design_a_course(files.0, files.1),
             };
             print_test_result(res, j);
         }
     }
 }
 
-fn todo() -> bool {
-    true
+fn design_a_course(input: File, output: File) -> bool {
+    // Construct the input List
+    let mut topic_list = construct_topic_list(input);
+    let my_res = topic_list.find_max_course();
+
+    // Compare result with expected one
+    let exp_res: usize = io::BufReader::new(output)
+        .lines()
+        .next()
+        .expect("Error")
+        .unwrap()
+        .trim()
+        .parse()
+        .unwrap();
+
+    //println!("exp_res = {exp_res}\tmy_res={my_res}");
+    exp_res == my_res
+}
+
+fn construct_topic_list(input: File) -> TopicList {
+    // Creating the iterator for scanning the file
+    let input = io::BufReader::new(input);
+    let mut input = input.lines();
+
+    // Determining the number of topics n
+    let n: usize = input
+        .next()
+        .expect("Error")
+        .unwrap()
+        .trim()
+        .parse()
+        .unwrap();
+
+    // Constructing list
+    let mut lst = TopicList::new(n);
+
+    // Filling list
+    for (index, line) in input.enumerate() {
+        let b_d: Vec<u32> = line
+            .unwrap()
+            .split_whitespace()
+            .map(|word| word.parse().unwrap())
+            .collect();
+        if b_d.len() > 0 {
+            let (beauty, difficulty) = (b_d[0], b_d[1]);
+            lst.set_topic(index, beauty, difficulty);
+        }
+    }
+    lst
 }
 
 /// Prints the message "Test i - Passed" or "Test i - Failed"
@@ -92,7 +139,7 @@ fn construct_itinerary(input: File) -> ItineraryMatrix {
         .expect("Error")
         .unwrap()
         .split_whitespace()
-        .map(|word| word.parse::<usize>().unwrap())
+        .map(|word| word.parse().unwrap())
         .collect();
     let (n, d) = (n_d[0], n_d[1]);
 
@@ -102,7 +149,7 @@ fn construct_itinerary(input: File) -> ItineraryMatrix {
         let numbers: Vec<u32> = line
             .unwrap()
             .split_whitespace()
-            .map(|word| word.parse::<u32>().unwrap())
+            .map(|word| word.parse().unwrap())
             .collect();
         mtx.add_row(index, &numbers);
     }
