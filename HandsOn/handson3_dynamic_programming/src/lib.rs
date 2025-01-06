@@ -18,13 +18,13 @@
 use std::cmp;
 
 /// Represents a fixed size Matrix.
-pub struct CustomMatrix {
+pub struct ItineraryMatrix {
     rows: usize,
     cols: usize,
     data: Vec<u32>,
 }
 
-impl CustomMatrix {
+impl ItineraryMatrix {
     /// A Base constructor creating a matrix
     /// in which all values are set to 0
     pub fn new(rows: usize, cols: usize) -> Self {
@@ -76,171 +76,57 @@ impl CustomMatrix {
             self.set_value(&row_idx, &j, nums[j]);
         }
     }
-}
 
-/// Given in input the `mtx` matrix
-/// it returns the matrix `sum` s.t.
-/// ∀i ∈ [0, n-1].∀j ∈ [0, m-1].sum[i][j] = Σ_{k=0 -> j}mtx[i][k]
-fn construct_prefix_sum(mtx: &CustomMatrix) -> CustomMatrix {
-    let mut sum_prefix = CustomMatrix::new(mtx.rows, mtx.cols);
+    /// Given in input the `mtx` matrix
+    /// it returns the matrix `sum` s.t.
+    /// ∀i ∈ [0, n-1].∀j ∈ [0, m-1].sum[i][j] = Σ_{k=0 -> j}mtx[i][k]
+    fn construct_prefix_sum(&self) -> ItineraryMatrix {
+        let mut sum_prefix = ItineraryMatrix::new(self.rows, self.cols);
 
-    for i in 0..mtx.rows {
-        for j in 0..mtx.cols {
-            if j == 0 {
-                sum_prefix.set_value(&i, &j, mtx.get_value(&i, &j).clone());
-            } else {
-                let val = sum_prefix.get_value(&i, &(j - 1)) + mtx.get_value(&i, &j);
-                sum_prefix.set_value(&i, &j, val);
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                if j == 0 {
+                    sum_prefix.set_value(&i, &j, self.get_value(&i, &j).clone());
+                } else {
+                    let val = sum_prefix.get_value(&i, &(j - 1)) + self.get_value(&i, &j);
+                    sum_prefix.set_value(&i, &j, val);
+                }
             }
         }
+        sum_prefix
     }
-    sum_prefix
-}
 
-pub fn find_max_activities(it: &CustomMatrix) -> u32 {
-    // Construct prefix sum matrix
-    let sum = construct_prefix_sum(it);
+    pub fn find_max_activities(&self) -> u32 {
+        // Construct prefix sum matrix
+        let sum = self.construct_prefix_sum();
 
-    // Construct solution matrix
-    let mut dp = CustomMatrix::new(it.rows, it.cols);
-    for i in 0..it.rows {
-        for j in 0..it.cols {
-            // max {left; right}
-            // left = dp(i-1, j)
-            // right = max_(0<= z <= j) dp(i-1, j - (z + 1)) + sum(i,z)
-            let left = if i > 0 { dp.get_value(&(i - 1), &j) } else { 0 };
+        // Construct solution matrix
+        let mut dp = ItineraryMatrix::new(self.rows, self.cols);
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                // max {left; right}
+                // left = dp(i-1, j)
+                // right = max_(0<= z <= j) dp(i-1, j - (z + 1)) + sum(i,z)
+                let left = if i > 0 { dp.get_value(&(i - 1), &j) } else { 0 };
 
-            // Find the maximum
-            let rigth = (0..=j)
-                .map(|z| {
-                    let days = z + 1;
-                    let sum_values = sum.get_value(&i, &z);
-                    if i > 0 && j >= days {
-                        sum_values + dp.get_value(&(i - 1), &(j - days))
-                    } else {
-                        sum_values
-                    }
-                })
-                .max()
-                .unwrap_or(0);
+                // Find the maximum
+                let rigth = (0..=j)
+                    .map(|z| {
+                        let days = z + 1;
+                        let sum_values = sum.get_value(&i, &z);
+                        if i > 0 && j >= days {
+                            sum_values + dp.get_value(&(i - 1), &(j - days))
+                        } else {
+                            sum_values
+                        }
+                    })
+                    .max()
+                    .unwrap_or(0);
 
-            // Store the final value
-            dp.set_value(&i, &j, cmp::max(left, rigth));
+                // Store the final value
+                dp.set_value(&i, &j, cmp::max(left, rigth));
+            }
         }
-    }
-    dp.get_value(&(it.rows - 1), &(it.cols - 1)).clone()
-}
-
-#[cfg(test)]
-mod prefix_sum_tests {
-    use crate::{construct_prefix_sum, CustomMatrix};
-
-    #[test]
-    fn psum_1() {
-        // Input mtx:
-        // 3 2 1
-        // 3 1 1
-        // Output sum prefix:
-        // 3 5 6
-        // 3 4 5
-
-        // Constructing input mtx
-        let mut mtx = CustomMatrix::new(2, 3);
-        mtx.set_value(&0, &0, 3);
-        mtx.set_value(&0, &1, 2);
-        mtx.set_value(&0, &2, 1);
-
-        mtx.set_value(&1, &0, 3);
-        mtx.set_value(&1, &1, 1);
-        mtx.set_value(&1, &2, 1);
-
-        // Testing result
-        let sum = construct_prefix_sum(&mtx);
-        assert_eq!(sum.get_value(&0, &0), 3);
-        assert_eq!(sum.get_value(&0, &1), 5);
-        assert_eq!(sum.get_value(&0, &2), 6);
-
-        assert_eq!(sum.get_value(&1, &0), 3);
-        assert_eq!(sum.get_value(&1, &1), 4);
-        assert_eq!(sum.get_value(&1, &2), 5);
-    }
-
-    #[test]
-    fn psum_2() {
-        // Input mtx:
-        // 100 100 1
-        // 1   1   2000
-        // Output sum prefix:
-        // 100 200 201
-        // 100 200 2002
-
-        // Contructing input mtx
-        let mut mtx = CustomMatrix::new(2, 3);
-        mtx.set_value(&0, &0, 100);
-        mtx.set_value(&0, &1, 100);
-        mtx.set_value(&0, &2, 1);
-
-        mtx.set_value(&1, &0, 1);
-        mtx.set_value(&1, &1, 1);
-        mtx.set_value(&1, &2, 2000);
-
-        // Testing result
-        let sum = construct_prefix_sum(&mtx);
-        assert_eq!(sum.get_value(&0, &0), 100);
-        assert_eq!(sum.get_value(&0, &1), 200);
-        assert_eq!(sum.get_value(&0, &2), 201);
-
-        assert_eq!(sum.get_value(&1, &0), 1);
-        assert_eq!(sum.get_value(&1, &1), 2);
-        assert_eq!(sum.get_value(&1, &2), 2002);
-    }
-}
-
-#[cfg(test)]
-mod find_max_activities_tests {
-    use crate::{find_max_activities, CustomMatrix};
-
-    #[test]
-    fn max_1() {
-        // Input mtx:
-        // 3 2 1
-        // 3 1 1
-        // Output:
-        // 8
-
-        // Constructing input mtx
-        let mut mtx = CustomMatrix::new(2, 3);
-        mtx.set_value(&0, &0, 3);
-        mtx.set_value(&0, &1, 2);
-        mtx.set_value(&0, &2, 1);
-
-        mtx.set_value(&1, &0, 3);
-        mtx.set_value(&1, &1, 1);
-        mtx.set_value(&1, &2, 1);
-
-        // Testing result
-        assert_eq!(find_max_activities(&mtx), 8);
-    }
-
-    #[test]
-    fn max_2() {
-        // Input mtx:
-        // 100 100 1
-        // 1   1   2000
-        // Output:
-        // 2002
-
-        // Constructing input mtx
-        let mut mtx = CustomMatrix::new(2, 3);
-        mtx.set_value(&0, &0, 100);
-        mtx.set_value(&0, &1, 100);
-        mtx.set_value(&0, &2, 1);
-
-        mtx.set_value(&1, &0, 1);
-        mtx.set_value(&1, &1, 1);
-        mtx.set_value(&1, &2, 2000);
-
-        // Testing result
-        assert_eq!(find_max_activities(&mtx), 2002);
+        dp.get_value(&(self.rows - 1), &(self.cols - 1)).clone()
     }
 }

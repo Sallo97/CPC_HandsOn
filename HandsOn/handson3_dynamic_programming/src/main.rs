@@ -1,5 +1,4 @@
-use handson3_dynamic_programming::find_max_activities;
-use handson3_dynamic_programming::CustomMatrix;
+use handson3_dynamic_programming::ItineraryMatrix;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::usize;
@@ -67,7 +66,7 @@ fn get_files(i: usize, j: usize) -> (File, File) {
 fn holiday_planning(input: File, output: File) -> bool {
     // Constructing the input matrix
     let itinerary = construct_itinerary(input);
-    let my_res = find_max_activities(&itinerary);
+    let my_res = itinerary.find_max_activities();
 
     // Getting the expected result from output
     let exp_res: u32 = io::BufReader::new(output)
@@ -82,7 +81,7 @@ fn holiday_planning(input: File, output: File) -> bool {
 }
 
 /// Gotten the `input` test file constructs the associated matrix
-fn construct_itinerary(input: File) -> CustomMatrix {
+fn construct_itinerary(input: File) -> ItineraryMatrix {
     // Creating the iterator for scanning the file
     let input = io::BufReader::new(input);
     let mut input = input.lines();
@@ -98,7 +97,7 @@ fn construct_itinerary(input: File) -> CustomMatrix {
     let (n, d) = (n_d[0], n_d[1]);
 
     // Parsing matrix
-    let mut mtx = CustomMatrix::new(n, d);
+    let mut mtx = ItineraryMatrix::new(n, d);
     for (index, line) in input.enumerate() {
         let numbers: Vec<u32> = line
             .unwrap()
