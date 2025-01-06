@@ -4,9 +4,12 @@ use std::io::{self, BufRead};
 use std::usize;
 
 /// This program checks the correctness of the implemented solutions
-/// for the second HandsOn from the "Competitive Programming and Contests"
+/// for the third HandsOn from the "Competitive Programming and Contests"
 /// 2024/25 course held at the University of Pisa.
-/// This code tests the solutions to the two assigned problems, `Holiday Planning` and `Design a course`,
+///
+/// This code tests the solutions to the two assigned problems:
+/// - `Holiday Planning`
+/// - `Design a course`,
 /// using the test sets provided.
 /// The program assumes that the tests are stored in the folders "Testset_handson3_p1"
 /// and "Testset_handson3_p2" at the root of the cargo project.
@@ -25,6 +28,10 @@ fn main() {
     }
 }
 
+/// Executes the `Holiday Planning` problem for a given pair
+/// of test files `(input, output)`.
+/// Returns `true` if the generated output matches the
+/// expected `output`, `false` otherwise.
 fn design_a_course(input: File, output: File) -> bool {
     // Construct the input List
     let mut topic_list = construct_topic_list(input);
@@ -40,10 +47,10 @@ fn design_a_course(input: File, output: File) -> bool {
         .parse()
         .unwrap();
 
-    //println!("exp_res = {exp_res}\tmy_res={my_res}");
     exp_res == my_res
 }
 
+/// Given the `input` test file constructs the associated topics list and returns it.
 fn construct_topic_list(input: File) -> TopicList {
     // Creating the iterator for scanning the file
     let input = io::BufReader::new(input);
@@ -73,6 +80,7 @@ fn construct_topic_list(input: File) -> TopicList {
             lst.set_topic(index, beauty, difficulty);
         }
     }
+
     lst
 }
 
@@ -127,7 +135,7 @@ fn holiday_planning(input: File, output: File) -> bool {
     exp_res == my_res
 }
 
-/// Gotten the `input` test file constructs the associated matrix
+/// Given the `input` test file constructs the associated itinerary and returns it.
 fn construct_itinerary(input: File) -> ItineraryMatrix {
     // Creating the iterator for scanning the file
     let input = io::BufReader::new(input);
