@@ -3,13 +3,9 @@ This repository contains my solution of all Hands-On exercises and additional pu
 
 ## Table of Contents
 
-- [HandsOn](#handson)
-  - [HandsOn1 - Binary Tree](#handson1-binary-tree)
-  - [HandsOn2 - Segment Tree](#handson2-segment-tree)
-  - [HandsOn3 - Dynamic Programming](#handson3-dynamic-programming)
-
-
-## HandsOn
+- [HandsOn1 - Binary Tree](#handson1-binary-tree)
+- [HandsOn2 - Segment Tree](#handson2-segment-tree)
+- [HandsOn3 - Dynamic Programming](#handson3-dynamic-programming)
 
 ### HandsOn1 - Binary Tree
 Given a Rust's implementation of a Binary Tree, implement methods to solve the following exercises:
