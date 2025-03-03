@@ -1,5 +1,5 @@
 # [CPC] HandsOn
-This repository contains my solution of all Hands-On exercises and additional puzzles for the 2024/2025 "Competitive Programming and Contests" course at the University of Pisa. All code is written in Rust.
+This repository contains my solutions for all Hands-On exercises of the 2024/2025 "Competitive Programming and Contests" course at University of Pisa. All code is written in Rust.
 
 ## Table of Contents
 
